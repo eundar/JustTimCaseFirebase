@@ -16,11 +16,21 @@ import {
 } from "@/components/ui/table"
 
 import { Badge } from "@/components/ui/badge"
-import { selectors } from "@/data/mockData.ts"
-
-const cases = selectors.getRecentCases()
+import { Skeleton } from "@/components/ui/skeleton"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { getRecentCases } from "@/lib/derived"
 
 export function RecentCases() {
+  const { clients, loading: clientsLoading } = useClients()
+  const { cases: allCases, loading: casesLoading } = useCases()
+
+  if (clientsLoading || casesLoading) {
+    return <Skeleton className="h-48 w-full" />
+  }
+
+  const cases = getRecentCases(allCases, clients)
+
   return (
     <Card>
       <CardHeader>

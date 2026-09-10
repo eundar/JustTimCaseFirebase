@@ -17,17 +17,49 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { selectors } from "@/data/mockData.ts"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { useAppointments } from "@/hooks/useAppointments"
+import { useDocuments } from "@/hooks/useDocuments"
+import {
+  getCaseById,
+  getClientById,
+  getDocumentsByCaseId,
+  getAppointmentsWithDetails,
+} from "@/lib/derived"
 
 interface CaseProfileProps {
   caseId: string
 }
 
 export function CaseProfile({ caseId }: CaseProfileProps) {
-  const caseData = selectors.getCaseById(caseId)
-  const documents = selectors.getDocumentsByCaseId(caseId)
-  const allAppointments = selectors.getAppointmentsWithDetails()
-  const appointments = allAppointments.filter((apt) => apt.caseId === caseId)
+  const { clients, loading: clientsLoading } = useClients()
+  const { cases, loading: casesLoading } = useCases()
+  const { appointments: allAppointments, loading: appointmentsLoading } =
+    useAppointments()
+  const { documents: allDocuments, loading: documentsLoading } =
+    useDocuments()
+
+  if (
+    clientsLoading ||
+    casesLoading ||
+    appointmentsLoading ||
+    documentsLoading
+  ) {
+    return <Skeleton className="h-64 w-full" />
+  }
+
+  const caseData = getCaseById(cases, caseId)
+  const documents = getDocumentsByCaseId(allDocuments, caseId)
+  const allAppointmentsWithDetails = getAppointmentsWithDetails(
+    allAppointments,
+    clients,
+    cases
+  )
+  const appointments = allAppointmentsWithDetails.filter(
+    (apt) => apt.caseId === caseId
+  )
 
   if (!caseData) {
     return (
@@ -39,7 +71,7 @@ export function CaseProfile({ caseId }: CaseProfileProps) {
     )
   }
 
-  const client = selectors.getClientById(caseData.clientId)
+  const client = getClientById(clients, caseData.clientId)
 
   const statusVariant = (status: string) => {
     switch (status) {
@@ -168,7 +200,7 @@ export function CaseProfile({ caseId }: CaseProfileProps) {
               </TableHeader>
               <TableBody>
                 {documents.map((doc) => {
-                  const docClient = selectors.getClientById(doc.clientId)
+                  const docClient = getClientById(clients, doc.clientId)
                   return (
                     <TableRow key={doc.id}>
                       <TableCell className="font-medium">{doc.id}</TableCell>

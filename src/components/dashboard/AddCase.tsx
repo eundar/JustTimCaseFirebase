@@ -19,23 +19,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { selectors } from "@/data/mockData"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+
+import type { Case } from "@/types/models"
+
+type NewCase = Omit<Case, "id" | "ownerId">
 
 interface AddCaseProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAddCase?: (caseData: NewCase) => void
 }
 
-import type { Case } from "@/data/mockData"
-
-type NewCase = Omit<Case, "id">
-
-export default function AddCase({
-  open,
-  onOpenChange,
-  onAddCase,
-}: AddCaseProps) {
+export default function AddCase({ open, onOpenChange }: AddCaseProps) {
+  const { clients } = useClients()
+  const { addCase } = useCases()
   const [formData, setFormData] = useState<NewCase>({
     title: "",
     clientId: "",
@@ -45,8 +43,6 @@ export default function AddCase({
   })
 
   const [errors, setErrors] = useState<Partial<NewCase>>({})
-
-  const clients = selectors.getAllClients()
 
   const caseTypes = [
     "Civil",
@@ -82,9 +78,9 @@ export default function AddCase({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      onAddCase?.(formData)
+      await addCase(formData)
       setFormData({
         title: "",
         clientId: "",

@@ -18,18 +18,21 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Plus, ArrowLeft } from "lucide-react"
-import { selectors } from "@/data/mockData.ts"
 
 import { useState } from "react"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { getCasesWithDetails } from "@/lib/derived"
 import AddCase from "@/components/dashboard/AddCase.tsx"
 import { CaseProfile } from "@/components/dashboard/CaseProfile"
-
-const cases = selectors.getCasesWithDetails()
 
 export default function Cases() {
   const [open, setOpen] = useState(false)
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
+  const { clients, loading: clientsLoading } = useClients()
+  const { cases: allCases, loading: casesLoading } = useCases()
 
   if (selectedCaseId) {
     return (
@@ -49,6 +52,12 @@ export default function Cases() {
       </div>
     )
   }
+
+  if (clientsLoading || casesLoading) {
+    return <Skeleton className="h-64 w-full" />
+  }
+
+  const cases = getCasesWithDetails(allCases, clients)
 
   return (
     <div className="space-y-6">
