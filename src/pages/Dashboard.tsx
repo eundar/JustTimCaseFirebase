@@ -3,12 +3,31 @@ import { Briefcase, CalendarDays, FileText, Users } from "lucide-react"
 import { StatsCard } from "@/components/dashboard/StatsCard"
 import { RecentCases } from "@/components/dashboard/RecentCases"
 import { UpcommingAppointments } from "@/components/dashboard/UpcommingAppointments"
-import { selectors } from "@/data/mockData.ts"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { useAppointments } from "@/hooks/useAppointments"
+import { useDocuments } from "@/hooks/useDocuments"
+import { getStatistics } from "@/lib/derived"
 import { Link } from "react-router"
 
-const statistics = selectors.getStatistics()
-
 export default function Dashboard() {
+  const { clients, loading: clientsLoading } = useClients()
+  const { cases, loading: casesLoading } = useCases()
+  const { appointments, loading: appointmentsLoading } = useAppointments()
+  const { documents, loading: documentsLoading } = useDocuments()
+
+  if (
+    clientsLoading ||
+    casesLoading ||
+    appointmentsLoading ||
+    documentsLoading
+  ) {
+    return <Skeleton className="h-64 w-full" />
+  }
+
+  const statistics = getStatistics(clients, cases, appointments, documents)
+
   return (
     <div className="space-y-6">
       <div>
