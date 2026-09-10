@@ -1,0 +1,101 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { CalendarDays, Clock } from "lucide-react"
+import { selectors } from "@/data/mockData.ts"
+
+const appointments = selectors.getAppointmentsWithDetails()
+
+// Filter for upcoming appointments (Scheduled or Confirmed status)
+const upcomingAppointments = appointments
+  .filter((apt) => apt.status === "Scheduled" || apt.status === "Confirmed")
+  .slice(0, 5)
+
+export function UpcommingAppointments() {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Upcoming Appointments</CardTitle>
+            <CardDescription>
+              Next scheduled appointments for your clients.
+            </CardDescription>
+          </div>
+          <CalendarDays className="h-5 w-5 text-muted-foreground" />
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {upcomingAppointments.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  Date & Time
+                </TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {upcomingAppointments.map((appointment) => (
+                <TableRow key={appointment.id}>
+                  <TableCell className="text-sm font-medium">
+                    {appointment.id}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {appointment.client?.name || "N/A"}
+                  </TableCell>
+                  <TableCell>{appointment.type}</TableCell>
+                  <TableCell className="text-sm">
+                    {appointment.date} at {appointment.time}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {appointment.location}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        appointment.status === "Confirmed"
+                          ? "default"
+                          : appointment.status === "Scheduled"
+                            ? "outline"
+                            : "secondary"
+                      }
+                    >
+                      {appointment.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div className="py-8 text-center text-muted-foreground">
+            <CalendarDays className="mx-auto mb-2 h-8 w-8 opacity-50" />
+            <p>No upcoming appointments scheduled.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
