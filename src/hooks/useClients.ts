@@ -5,9 +5,7 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  query,
   updateDoc,
-  where,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/context/AuthContext"
@@ -27,9 +25,8 @@ export function useClients() {
       return
     }
     setLoading(true)
-    const q = query(collection(db, "clients"), where("ownerId", "==", user.uid))
     const unsubscribe = onSnapshot(
-      q,
+      collection(db, "clients"),
       (snapshot) => {
         setClients(
           snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Client)

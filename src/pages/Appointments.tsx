@@ -1,5 +1,6 @@
 "use client"
 
+import { useSearchParams } from "react-router"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -26,10 +27,13 @@ import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useAppointments } from "@/hooks/useAppointments"
 import { getAppointmentsWithDetails } from "@/lib/derived"
+import { matchesSearch } from "@/lib/utils"
 import ScheduleAppointment from "@/components/dashboard/ScheduleAppointment"
 
 export default function Appointments() {
+  const [searchParams] = useSearchParams()
   const [openScheduleDialog, setOpenScheduleDialog] = useState(false)
+  const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const { clients, loading: clientsLoading, error: clientsError } = useClients()
   const { cases, loading: casesLoading, error: casesError } = useCases()
   const {
@@ -54,6 +58,14 @@ export default function Appointments() {
     allAppointments,
     clients,
     cases
+  ).filter((appointment) =>
+    matchesSearch(search, [
+      appointment.id,
+      appointment.client?.name,
+      appointment.date,
+      appointment.type,
+      appointment.location,
+    ])
   )
 
   return (
@@ -79,7 +91,11 @@ export default function Appointments() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Input placeholder="Search by client, or date..." />
+          <Input
+            placeholder="Search by client, or date..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </CardContent>
       </Card>
 
@@ -106,6 +122,18 @@ export default function Appointments() {
             </TableHeader>
 
             <TableBody>
+              {appointmentList.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    {search
+                      ? "No appointments match your search."
+                      : "No appointments found."}
+                  </TableCell>
+                </TableRow>
+              )}
               {appointmentList.map((appointment) => (
                 <TableRow key={appointment.id}>
                   <TableCell className="font-medium">

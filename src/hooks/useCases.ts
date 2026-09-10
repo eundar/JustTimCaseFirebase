@@ -5,9 +5,7 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  query,
   updateDoc,
-  where,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/context/AuthContext"
@@ -27,9 +25,8 @@ export function useCases() {
       return
     }
     setLoading(true)
-    const q = query(collection(db, "cases"), where("ownerId", "==", user.uid))
     const unsubscribe = onSnapshot(
-      q,
+      collection(db, "cases"),
       (snapshot) => {
         setCases(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Case))
         setLoading(false)

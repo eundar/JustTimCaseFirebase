@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { useSearchParams } from "react-router"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -23,12 +24,15 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { getAllClientsWithCaseCounts } from "@/lib/derived"
+import { matchesSearch } from "@/lib/utils"
 import AddClient from "@/components/dashboard/AddClient"
 import { ClientProfile } from "@/components/dashboard/ClientProfile"
 
 export default function Clients() {
+  const [searchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const {
     clients: allClients,
     loading: clientsLoading,
@@ -71,7 +75,10 @@ export default function Clients() {
     return <Skeleton className="h-64 w-full" />
   }
 
-  const clients = getAllClientsWithCaseCounts(allClients, allCases)
+  const clients = getAllClientsWithCaseCounts(allClients, allCases).filter(
+    (client) =>
+      matchesSearch(search, [client.id, client.name, client.email, client.phone])
+  )
 
   return (
     <div className="space-y-6">
@@ -97,7 +104,11 @@ export default function Clients() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Input placeholder="Search by name, email, or phone..." />
+          <Input
+            placeholder="Search by name, email, or phone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </CardContent>
       </Card>
 
@@ -112,7 +123,9 @@ export default function Clients() {
         <CardContent>
           {clients.length === 0 ? (
             <div className="flex items-center justify-center py-8">
-              <p className="text-muted-foreground">No Client</p>
+              <p className="text-muted-foreground">
+                {search ? "No clients match your search." : "No Client"}
+              </p>
             </div>
           ) : (
             <Table>

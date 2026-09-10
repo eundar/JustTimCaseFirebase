@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react"
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  query,
-  where,
-} from "firebase/firestore"
+import { addDoc, collection, deleteDoc, doc, onSnapshot } from "firebase/firestore"
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage"
 import { db, storage } from "@/lib/firebase"
 import { useAuth } from "@/context/AuthContext"
@@ -34,12 +26,8 @@ export function useDocuments() {
       return
     }
     setLoading(true)
-    const q = query(
-      collection(db, "documents"),
-      where("ownerId", "==", user.uid)
-    )
     const unsubscribe = onSnapshot(
-      q,
+      collection(db, "documents"),
       (snapshot) => {
         setDocuments(
           snapshot.docs.map(

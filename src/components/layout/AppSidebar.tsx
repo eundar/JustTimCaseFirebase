@@ -6,6 +6,7 @@ import {
   LogOut,
   Users,
   Briefcase,
+  UserCircle,
 } from "lucide-react"
 
 import {
@@ -45,6 +46,11 @@ const navigation = [
     title: "Appointments",
     icon: CalendarDays,
     path: "/appointments",
+  },
+  {
+    title: "Profile",
+    icon: UserCircle,
+    path: "/settings",
   },
 ]
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "react-router"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Card,
@@ -25,11 +26,14 @@ import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useDocuments } from "@/hooks/useDocuments"
 import { getDocumentsWithDetails } from "@/lib/derived"
+import { matchesSearch } from "@/lib/utils"
 import AddDocument from "@/components/dashboard/AddDocument"
 
 export default function Documents() {
+  const [searchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const { clients, loading: clientsLoading, error: clientsError } = useClients()
   const { cases, loading: casesLoading, error: casesError } = useCases()
   const {
@@ -51,7 +55,15 @@ export default function Documents() {
     return <Skeleton className="h-64 w-full" />
   }
 
-  const documents = getDocumentsWithDetails(allDocuments, clients, cases)
+  const documents = getDocumentsWithDetails(allDocuments, clients, cases).filter(
+    (doc) =>
+      matchesSearch(search, [
+        doc.name,
+        doc.case?.title,
+        doc.caseId,
+        doc.type,
+      ])
+  )
 
   return (
     <div className="space-y-6">
@@ -81,7 +93,11 @@ export default function Documents() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Input placeholder="Search by document name, case ID, or type..." />
+          <Input
+            placeholder="Search by document name, case ID, or type..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </CardContent>
       </Card>
 
@@ -158,7 +174,9 @@ export default function Documents() {
                     colSpan={7}
                     className="py-8 text-center text-muted-foreground"
                   >
-                    No documents found. Upload a new document to get started.
+                    {search
+                      ? "No documents match your search."
+                      : "No documents found. Upload a new document to get started."}
                   </TableCell>
                 </TableRow>
               )}

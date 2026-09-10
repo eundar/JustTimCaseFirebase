@@ -1,5 +1,6 @@
 "use client"
 
+import { useSearchParams } from "react-router"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -25,12 +26,15 @@ import { useState } from "react"
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { getCasesWithDetails } from "@/lib/derived"
+import { matchesSearch } from "@/lib/utils"
 import AddCase from "@/components/dashboard/AddCase.tsx"
 import { CaseProfile } from "@/components/dashboard/CaseProfile"
 
 export default function Cases() {
+  const [searchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
+  const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const { clients, loading: clientsLoading, error: clientsError } = useClients()
   const {
     cases: allCases,
@@ -69,7 +73,9 @@ export default function Cases() {
     return <Skeleton className="h-64 w-full" />
   }
 
-  const cases = getCasesWithDetails(allCases, clients)
+  const cases = getCasesWithDetails(allCases, clients).filter((caseItem) =>
+    matchesSearch(search, [caseItem.id, caseItem.title, caseItem.client?.name])
+  )
 
   return (
     <div className="space-y-6">
@@ -95,7 +101,11 @@ export default function Cases() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Input placeholder="Search by case ID, title, or client..." />
+          <Input
+            placeholder="Search by case ID, title, or client..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </CardContent>
       </Card>
 
@@ -122,6 +132,16 @@ export default function Cases() {
             </TableHeader>
 
             <TableBody>
+              {cases.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    {search ? "No cases match your search." : "No cases found."}
+                  </TableCell>
+                </TableRow>
+              )}
               {cases.map((caseItem) => (
                 <TableRow key={caseItem.id}>
                   <TableCell className="font-medium">{caseItem.id}</TableCell>
