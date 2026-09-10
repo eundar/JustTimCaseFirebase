@@ -1,4 +1,7 @@
-import { Button } from "@/components/ui/button"
+"use client"
+
+import { useState } from "react"
+import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -16,12 +19,30 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Plus, FileText, Download, Trash2 } from "lucide-react"
-import { selectors } from "@/data/mockData.ts"
-
-const documents = selectors.getDocumentsWithDetails?.() ?? []
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { useDocuments } from "@/hooks/useDocuments"
+import { getDocumentsWithDetails } from "@/lib/derived"
+import AddDocument from "@/components/dashboard/AddDocument"
 
 export default function Documents() {
+  const [open, setOpen] = useState(false)
+  const { clients, loading: clientsLoading } = useClients()
+  const { cases, loading: casesLoading } = useCases()
+  const {
+    documents: allDocuments,
+    loading: documentsLoading,
+    deleteDocument,
+  } = useDocuments()
+
+  if (clientsLoading || casesLoading || documentsLoading) {
+    return <Skeleton className="h-64 w-full" />
+  }
+
+  const documents = getDocumentsWithDetails(allDocuments, clients, cases)
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -31,10 +52,11 @@ export default function Documents() {
             Manage and organize all case-related documents and files.
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Upload Document
         </Button>
+        <AddDocument open={open} onOpenChange={setOpen} />
       </div>
 
       <Card>
@@ -70,14 +92,14 @@ export default function Documents() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {documents && documents.length > 0 ? (
-                documents.map((doc: any) => (
+              {documents.length > 0 ? (
+                documents.map((doc) => (
                   <TableRow key={doc.id}>
                     <TableCell>
                       <FileText className="h-4 w-4 text-muted-foreground" />
                     </TableCell>
                     <TableCell className="font-medium">{doc.name}</TableCell>
-                    <TableCell>{doc.caseId}</TableCell>
+                    <TableCell>{doc.case?.title ?? doc.caseId}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{doc.type}</Badge>
                     </TableCell>
@@ -85,10 +107,24 @@ export default function Documents() {
                     <TableCell>{doc.size}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm">
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={buttonVariants({
+                            variant: "ghost",
+                            size: "sm",
+                          })}
+                        >
                           <Download className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
+                        </a>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            deleteDocument(doc.id, doc.storagePath)
+                          }
+                        >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
