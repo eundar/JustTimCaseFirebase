@@ -19,15 +19,18 @@ import {
 } from "@/components/ui/table"
 
 import { Plus, ArrowLeft } from "lucide-react"
-import { selectors } from "@/data/mockData.ts"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { getAllClientsWithCaseCounts } from "@/lib/derived"
 import AddClient from "@/components/dashboard/AddClient"
 import { ClientProfile } from "@/components/dashboard/ClientProfile"
-
-const clients = selectors.getAllClientsWithCaseCounts()
 
 export default function Clients() {
   const [open, setOpen] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const { clients: allClients, loading: clientsLoading } = useClients()
+  const { cases: allCases, loading: casesLoading } = useCases()
 
   if (selectedClientId) {
     return (
@@ -47,6 +50,12 @@ export default function Clients() {
       </div>
     )
   }
+
+  if (clientsLoading || casesLoading) {
+    return <Skeleton className="h-64 w-full" />
+  }
+
+  const clients = getAllClientsWithCaseCounts(allClients, allCases)
 
   return (
     <div className="space-y-6">

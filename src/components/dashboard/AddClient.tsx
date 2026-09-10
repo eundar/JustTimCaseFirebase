@@ -12,32 +12,29 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useClients } from "@/hooks/useClients"
 
-import type { Client } from "@/data/mockData.ts"
+import type { Client } from "@/types/models"
 
-type NewClient = Omit<Client, "id" | "status">
+type NewClient = Omit<Client, "id" | "ownerId">
 
 interface AddClientProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAddClient?: (client: NewClient) => void
 }
 
-export default function AddClient({
-  open,
-  onOpenChange,
-  onAddClient,
-}: AddClientProps) {
+export default function AddClient({ open, onOpenChange }: AddClientProps) {
+  const { addClient } = useClients()
   const [formData, setFormData] = useState<NewClient>({
     name: "",
     email: "",
     phone: "",
   })
 
-  const [errors, setErrors] = useState<Partial<Client>>({})
+  const [errors, setErrors] = useState<Partial<NewClient>>({})
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Client> = {}
+    const newErrors: Partial<NewClient> = {}
 
     if (!formData.name.trim()) {
       newErrors.name = "Name is required"
@@ -59,9 +56,9 @@ export default function AddClient({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      onAddClient?.(formData)
+      await addClient(formData)
       setFormData({
         name: "",
         email: "",

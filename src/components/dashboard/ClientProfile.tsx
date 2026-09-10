@@ -17,17 +17,43 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { selectors } from "@/data/mockData.ts"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { useAppointments } from "@/hooks/useAppointments"
+import { useDocuments } from "@/hooks/useDocuments"
+import {
+  getClientById,
+  getCasesByClientId,
+  getAppointmentsByClientId,
+  getDocumentsByClientId,
+} from "@/lib/derived"
 
 interface ClientProfileProps {
   clientId: string
 }
 
 export function ClientProfile({ clientId }: ClientProfileProps) {
-  const client = selectors.getClientById(clientId)
-  const cases = selectors.getCasesByClientId(clientId)
-  const appointments = selectors.getAppointmentsByClientId(clientId)
-  const documents = selectors.getDocumentsByClientId(clientId)
+  const { clients: allClients, loading: clientsLoading } = useClients()
+  const { cases: allCases, loading: casesLoading } = useCases()
+  const { appointments: allAppointments, loading: appointmentsLoading } =
+    useAppointments()
+  const { documents: allDocuments, loading: documentsLoading } =
+    useDocuments()
+
+  if (
+    clientsLoading ||
+    casesLoading ||
+    appointmentsLoading ||
+    documentsLoading
+  ) {
+    return <Skeleton className="h-64 w-full" />
+  }
+
+  const client = getClientById(allClients, clientId)
+  const cases = getCasesByClientId(allCases, clientId)
+  const appointments = getAppointmentsByClientId(allAppointments, clientId)
+  const documents = getDocumentsByClientId(allDocuments, clientId)
 
   if (!client) {
     return (
