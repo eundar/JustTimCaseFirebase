@@ -14,17 +14,33 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { CalendarDays, Clock } from "lucide-react"
-import { selectors } from "@/data/mockData.ts"
-
-const appointments = selectors.getAppointmentsWithDetails()
-
-// Filter for upcoming appointments (Scheduled or Confirmed status)
-const upcomingAppointments = appointments
-  .filter((apt) => apt.status === "Scheduled" || apt.status === "Confirmed")
-  .slice(0, 5)
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { useAppointments } from "@/hooks/useAppointments"
+import { getAppointmentsWithDetails } from "@/lib/derived"
 
 export function UpcommingAppointments() {
+  const { clients, loading: clientsLoading } = useClients()
+  const { cases, loading: casesLoading } = useCases()
+  const { appointments: allAppointments, loading: appointmentsLoading } =
+    useAppointments()
+
+  if (clientsLoading || casesLoading || appointmentsLoading) {
+    return <Skeleton className="h-48 w-full" />
+  }
+
+  const appointments = getAppointmentsWithDetails(
+    allAppointments,
+    clients,
+    cases
+  )
+
+  const upcomingAppointments = appointments
+    .filter((apt) => apt.status === "Scheduled" || apt.status === "Confirmed")
+    .slice(0, 5)
+
   return (
     <Card>
       <CardHeader>

@@ -20,15 +20,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import type { Appointment } from "@/data/mockData.ts"
-import { clients, cases } from "@/data/mockData.ts"
+import type { Appointment } from "@/types/models"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { useAppointments } from "@/hooks/useAppointments"
 
-type NewAppointment = Omit<Appointment, "id" | "status">
+type NewAppointment = Omit<Appointment, "id" | "ownerId" | "status">
 
 interface ScheduleAppointmentProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onScheduleAppointment?: (appointment: NewAppointment) => void
 }
 
 const appointmentTypes = [
@@ -46,8 +47,10 @@ const locations = ["Office", "Virtual", "Client Site"]
 export default function ScheduleAppointment({
   open,
   onOpenChange,
-  onScheduleAppointment,
 }: ScheduleAppointmentProps) {
+  const { clients } = useClients()
+  const { cases } = useCases()
+  const { addAppointment } = useAppointments()
   const [formData, setFormData] = useState<NewAppointment>({
     clientId: "",
     caseId: null,
@@ -93,9 +96,9 @@ export default function ScheduleAppointment({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      onScheduleAppointment?.(formData)
+      await addAppointment({ ...formData, status: "Scheduled" })
       setFormData({
         clientId: "",
         caseId: null,

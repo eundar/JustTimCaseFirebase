@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -19,22 +18,32 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Plus } from "lucide-react"
-import { selectors } from "@/data/mockData.ts"
-import ScheduleAppointment from "@/components/dashboard/ScheduleAppointment"
 
-const appointments = selectors.getAppointmentsWithDetails()
+import { useState } from "react"
+import { useClients } from "@/hooks/useClients"
+import { useCases } from "@/hooks/useCases"
+import { useAppointments } from "@/hooks/useAppointments"
+import { getAppointmentsWithDetails } from "@/lib/derived"
+import ScheduleAppointment from "@/components/dashboard/ScheduleAppointment"
 
 export default function Appointments() {
   const [openScheduleDialog, setOpenScheduleDialog] = useState(false)
-  const [appointmentList, setAppointmentList] = useState(appointments)
-  const handleScheduleAppointment = (newAppointment: any) => {
-    const appointmentWithId = {
-      ...newAppointment,
-      id: `APT-${Date.now()}`,
-    }
-    setAppointmentList([...appointmentList, appointmentWithId])
+  const { clients, loading: clientsLoading } = useClients()
+  const { cases, loading: casesLoading } = useCases()
+  const { appointments: allAppointments, loading: appointmentsLoading } =
+    useAppointments()
+
+  if (clientsLoading || casesLoading || appointmentsLoading) {
+    return <Skeleton className="h-64 w-full" />
   }
+
+  const appointmentList = getAppointmentsWithDetails(
+    allAppointments,
+    clients,
+    cases
+  )
 
   return (
     <div className="space-y-6">
@@ -125,7 +134,6 @@ export default function Appointments() {
       <ScheduleAppointment
         open={openScheduleDialog}
         onOpenChange={setOpenScheduleDialog}
-        onScheduleAppointment={handleScheduleAppointment}
       />
     </div>
   )
