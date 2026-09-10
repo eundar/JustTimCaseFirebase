@@ -22,8 +22,20 @@ import { useCases } from "@/hooks/useCases"
 import { getRecentCases } from "@/lib/derived"
 
 export function RecentCases() {
-  const { clients, loading: clientsLoading } = useClients()
-  const { cases: allCases, loading: casesLoading } = useCases()
+  const { clients, loading: clientsLoading, error: clientsError } = useClients()
+  const {
+    cases: allCases,
+    loading: casesLoading,
+    error: casesError,
+  } = useCases()
+
+  if (clientsError || casesError) {
+    return (
+      <p className="text-sm text-red-500">
+        Failed to load data. Please try again later.
+      </p>
+    )
+  }
 
   if (clientsLoading || casesLoading) {
     return <Skeleton className="h-48 w-full" />

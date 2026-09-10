@@ -30,10 +30,21 @@ import ScheduleAppointment from "@/components/dashboard/ScheduleAppointment"
 
 export default function Appointments() {
   const [openScheduleDialog, setOpenScheduleDialog] = useState(false)
-  const { clients, loading: clientsLoading } = useClients()
-  const { cases, loading: casesLoading } = useCases()
-  const { appointments: allAppointments, loading: appointmentsLoading } =
-    useAppointments()
+  const { clients, loading: clientsLoading, error: clientsError } = useClients()
+  const { cases, loading: casesLoading, error: casesError } = useCases()
+  const {
+    appointments: allAppointments,
+    loading: appointmentsLoading,
+    error: appointmentsError,
+  } = useAppointments()
+
+  if (clientsError || casesError || appointmentsError) {
+    return (
+      <p className="text-sm text-red-500">
+        Failed to load data. Please try again later.
+      </p>
+    )
+  }
 
   if (clientsLoading || casesLoading || appointmentsLoading) {
     return <Skeleton className="h-64 w-full" />

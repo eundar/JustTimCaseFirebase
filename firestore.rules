@@ -6,31 +6,35 @@ service cloud.firestore {
     }
 
     match /clients/{docId} {
-      allow read, update, delete: if request.auth != null
-        && request.auth.uid == resource.data.ownerId;
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.ownerId;
+      allow read, delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.ownerId
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
     }
 
     match /cases/{docId} {
-      allow read, update, delete: if request.auth != null
-        && request.auth.uid == resource.data.ownerId;
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.ownerId;
+      allow read, delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.ownerId
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
     }
 
     match /appointments/{docId} {
-      allow read, update, delete: if request.auth != null
-        && request.auth.uid == resource.data.ownerId;
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.ownerId;
+      allow read, delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.ownerId
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
     }
 
     match /documents/{docId} {
-      allow read, update, delete: if request.auth != null
-        && request.auth.uid == resource.data.ownerId;
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.ownerId;
+      allow read, delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.ownerId
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
     }
   }
 }

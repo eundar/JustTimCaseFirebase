@@ -107,38 +107,53 @@ async function main() {
 
   const ownerFor = (index: number) => attorneyUids[index % attorneyUids.length]
 
+  // Assign each client an owner by index, then derive every other collection's
+  // ownerId from its own clientId (not its array index) so ownership always
+  // matches the client the record actually belongs to — regardless of how
+  // each collection's array is sized relative to mockClients.
+  const ownerByClientId = new Map<string, string>(
+    mockClients.map((client, i) => [client.id, ownerFor(i)])
+  )
+  const ownerForClient = (clientId: string) => {
+    const ownerId = ownerByClientId.get(clientId)
+    if (!ownerId) {
+      throw new Error(`No owner found for clientId ${clientId}`)
+    }
+    return ownerId
+  }
+
   const batch = db.batch()
 
-  mockClients.forEach((client, i) => {
+  mockClients.forEach((client) => {
     const { id, ...data } = client
     batch.set(db.collection("clients").doc(id), {
       ...data,
-      ownerId: ownerFor(i),
+      ownerId: ownerForClient(id),
     })
   })
 
-  mockCases.forEach((c, i) => {
+  mockCases.forEach((c) => {
     const { id, ...data } = c
     batch.set(db.collection("cases").doc(id), {
       ...data,
-      ownerId: ownerFor(i),
+      ownerId: ownerForClient(c.clientId),
     })
   })
 
-  mockAppointments.forEach((a, i) => {
+  mockAppointments.forEach((a) => {
     const { id, ...data } = a
     batch.set(db.collection("appointments").doc(id), {
       ...data,
-      ownerId: ownerFor(i),
+      ownerId: ownerForClient(a.clientId),
     })
   })
 
-  mockDocuments.forEach((d, i) => {
+  mockDocuments.forEach((d) => {
     const { id, ...data } = d
     batch.set(db.collection("documents").doc(id), {
       ...data,
       storagePath: "",
-      ownerId: ownerFor(i),
+      ownerId: ownerForClient(d.clientId),
     })
   })
 

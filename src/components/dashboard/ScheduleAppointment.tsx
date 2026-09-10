@@ -61,6 +61,8 @@ export default function ScheduleAppointment({
   })
 
   const [errors, setErrors] = useState<Partial<NewAppointment>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const validateForm = (): boolean => {
     const newErrors: Partial<NewAppointment> = {}
@@ -97,18 +99,20 @@ export default function ScheduleAppointment({
   }
 
   const handleSubmit = async () => {
-    if (validateForm()) {
+    if (!validateForm()) {
+      return
+    }
+
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
       await addAppointment({ ...formData, status: "Scheduled" })
-      setFormData({
-        clientId: "",
-        caseId: null,
-        type: "",
-        date: "",
-        time: "",
-        location: "",
-      })
-      setErrors({})
+      handleReset()
       onOpenChange(false)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to save")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -122,6 +126,7 @@ export default function ScheduleAppointment({
       location: "",
     })
     setErrors({})
+    setSubmitError(null)
   }
 
   return (
@@ -271,6 +276,10 @@ export default function ScheduleAppointment({
               <p className="text-sm text-red-500">{errors.location}</p>
             )}
           </div>
+
+          {submitError && (
+            <p className="text-sm text-red-500">{submitError}</p>
+          )}
         </div>
 
         <DialogFooter>
@@ -280,10 +289,13 @@ export default function ScheduleAppointment({
               handleReset()
               onOpenChange(false)
             }}
+            disabled={submitting}
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Schedule</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "Scheduling..." : "Schedule"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

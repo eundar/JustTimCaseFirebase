@@ -29,13 +29,23 @@ import AddDocument from "@/components/dashboard/AddDocument"
 
 export default function Documents() {
   const [open, setOpen] = useState(false)
-  const { clients, loading: clientsLoading } = useClients()
-  const { cases, loading: casesLoading } = useCases()
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const { clients, loading: clientsLoading, error: clientsError } = useClients()
+  const { cases, loading: casesLoading, error: casesError } = useCases()
   const {
     documents: allDocuments,
     loading: documentsLoading,
+    error: documentsError,
     deleteDocument,
   } = useDocuments()
+
+  if (clientsError || casesError || documentsError) {
+    return (
+      <p className="text-sm text-red-500">
+        Failed to load data. Please try again later.
+      </p>
+    )
+  }
 
   if (clientsLoading || casesLoading || documentsLoading) {
     return <Skeleton className="h-64 w-full" />
@@ -58,6 +68,10 @@ export default function Documents() {
         </Button>
         <AddDocument open={open} onOpenChange={setOpen} />
       </div>
+
+      {deleteError && (
+        <p className="text-sm text-red-500">{deleteError}</p>
+      )}
 
       <Card>
         <CardHeader>
@@ -121,9 +135,16 @@ export default function Documents() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() =>
-                            deleteDocument(doc.id, doc.storagePath)
-                          }
+                          onClick={() => {
+                            deleteDocument(doc.id, doc.storagePath).catch(
+                              (err) =>
+                                setDeleteError(
+                                  err instanceof Error
+                                    ? err.message
+                                    : "Failed to delete document"
+                                )
+                            )
+                          }}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

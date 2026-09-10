@@ -29,8 +29,16 @@ import { ClientProfile } from "@/components/dashboard/ClientProfile"
 export default function Clients() {
   const [open, setOpen] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
-  const { clients: allClients, loading: clientsLoading } = useClients()
-  const { cases: allCases, loading: casesLoading } = useCases()
+  const {
+    clients: allClients,
+    loading: clientsLoading,
+    error: clientsError,
+  } = useClients()
+  const {
+    cases: allCases,
+    loading: casesLoading,
+    error: casesError,
+  } = useCases()
 
   if (selectedClientId) {
     return (
@@ -48,6 +56,14 @@ export default function Clients() {
         </div>
         <ClientProfile clientId={selectedClientId} />
       </div>
+    )
+  }
+
+  if (clientsError || casesError) {
+    return (
+      <p className="text-sm text-red-500">
+        Failed to load data. Please try again later.
+      </p>
     )
   }
 

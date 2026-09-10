@@ -32,6 +32,8 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
   })
 
   const [errors, setErrors] = useState<Partial<NewClient>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const validateForm = (): boolean => {
     const newErrors: Partial<NewClient> = {}
@@ -57,15 +59,20 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
   }
 
   const handleSubmit = async () => {
-    if (validateForm()) {
+    if (!validateForm()) {
+      return
+    }
+
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
       await addClient(formData)
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-      })
-      setErrors({})
+      handleReset()
       onOpenChange(false)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to save")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -76,6 +83,7 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
       phone: "",
     })
     setErrors({})
+    setSubmitError(null)
   }
 
   return (
@@ -137,6 +145,10 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
               <p className="text-sm text-red-500">{errors.phone}</p>
             )}
           </div>
+
+          {submitError && (
+            <p className="text-sm text-red-500">{submitError}</p>
+          )}
         </div>
 
         <DialogFooter>
@@ -146,10 +158,13 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
               handleReset()
               onOpenChange(false)
             }}
+            disabled={submitting}
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Add Client</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "Adding..." : "Add Client"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

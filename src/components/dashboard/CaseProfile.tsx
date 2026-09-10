@@ -34,12 +34,26 @@ interface CaseProfileProps {
 }
 
 export function CaseProfile({ caseId }: CaseProfileProps) {
-  const { clients, loading: clientsLoading } = useClients()
-  const { cases, loading: casesLoading } = useCases()
-  const { appointments: allAppointments, loading: appointmentsLoading } =
-    useAppointments()
-  const { documents: allDocuments, loading: documentsLoading } =
-    useDocuments()
+  const { clients, loading: clientsLoading, error: clientsError } = useClients()
+  const { cases, loading: casesLoading, error: casesError } = useCases()
+  const {
+    appointments: allAppointments,
+    loading: appointmentsLoading,
+    error: appointmentsError,
+  } = useAppointments()
+  const {
+    documents: allDocuments,
+    loading: documentsLoading,
+    error: documentsError,
+  } = useDocuments()
+
+  if (clientsError || casesError || appointmentsError || documentsError) {
+    return (
+      <p className="text-sm text-red-500">
+        Failed to load data. Please try again later.
+      </p>
+    )
+  }
 
   if (
     clientsLoading ||

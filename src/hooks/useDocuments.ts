@@ -78,7 +78,9 @@ export function useDocuments() {
   }
 
   const deleteDocument = async (id: string, storagePath: string) => {
-    await deleteObject(ref(storage, storagePath))
+    if (storagePath) {
+      await deleteObject(ref(storage, storagePath))
+    }
     await deleteDoc(doc(db, "documents", id))
   }
 

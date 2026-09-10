@@ -31,8 +31,12 @@ import { CaseProfile } from "@/components/dashboard/CaseProfile"
 export default function Cases() {
   const [open, setOpen] = useState(false)
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
-  const { clients, loading: clientsLoading } = useClients()
-  const { cases: allCases, loading: casesLoading } = useCases()
+  const { clients, loading: clientsLoading, error: clientsError } = useClients()
+  const {
+    cases: allCases,
+    loading: casesLoading,
+    error: casesError,
+  } = useCases()
 
   if (selectedCaseId) {
     return (
@@ -50,6 +54,14 @@ export default function Cases() {
         </div>
         <CaseProfile caseId={selectedCaseId} />
       </div>
+    )
+  }
+
+  if (clientsError || casesError) {
+    return (
+      <p className="text-sm text-red-500">
+        Failed to load data. Please try again later.
+      </p>
     )
   }
 

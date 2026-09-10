@@ -43,6 +43,8 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
   })
 
   const [errors, setErrors] = useState<Partial<NewCase>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const caseTypes = [
     "Civil",
@@ -79,17 +81,20 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
   }
 
   const handleSubmit = async () => {
-    if (validateForm()) {
+    if (!validateForm()) {
+      return
+    }
+
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
       await addCase(formData)
-      setFormData({
-        title: "",
-        clientId: "",
-        type: "",
-        status: "Active",
-        openDate: new Date().toISOString().split("T")[0],
-      })
-      setErrors({})
+      handleReset()
       onOpenChange(false)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to save")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -102,6 +107,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
       openDate: new Date().toISOString().split("T")[0],
     })
     setErrors({})
+    setSubmitError(null)
   }
 
   return (
@@ -197,6 +203,10 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
               <p className="text-sm text-red-500">{errors.openDate}</p>
             )}
           </div>
+
+          {submitError && (
+            <p className="text-sm text-red-500">{submitError}</p>
+          )}
         </div>
 
         <DialogFooter>
@@ -206,10 +216,13 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
               handleReset()
               onOpenChange(false)
             }}
+            disabled={submitting}
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Create Case</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "Creating..." : "Create Case"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

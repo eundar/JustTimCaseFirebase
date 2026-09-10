@@ -22,10 +22,21 @@ import { useAppointments } from "@/hooks/useAppointments"
 import { getAppointmentsWithDetails } from "@/lib/derived"
 
 export function UpcommingAppointments() {
-  const { clients, loading: clientsLoading } = useClients()
-  const { cases, loading: casesLoading } = useCases()
-  const { appointments: allAppointments, loading: appointmentsLoading } =
-    useAppointments()
+  const { clients, loading: clientsLoading, error: clientsError } = useClients()
+  const { cases, loading: casesLoading, error: casesError } = useCases()
+  const {
+    appointments: allAppointments,
+    loading: appointmentsLoading,
+    error: appointmentsError,
+  } = useAppointments()
+
+  if (clientsError || casesError || appointmentsError) {
+    return (
+      <p className="text-sm text-red-500">
+        Failed to load data. Please try again later.
+      </p>
+    )
+  }
 
   if (clientsLoading || casesLoading || appointmentsLoading) {
     return <Skeleton className="h-48 w-full" />

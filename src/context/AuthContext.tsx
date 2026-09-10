@@ -39,18 +39,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser)
-      if (firebaseUser) {
-        const snap = await getDoc(doc(db, "attorneys", firebaseUser.uid))
-        setAttorneyProfile(
-          snap.exists() ? (snap.data() as AttorneyProfile) : null
-        )
-      } else {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (firebaseUser) => {
+        setUser(firebaseUser)
+        if (firebaseUser) {
+          const snap = await getDoc(doc(db, "attorneys", firebaseUser.uid))
+          setAttorneyProfile(
+            snap.exists() ? (snap.data() as AttorneyProfile) : null
+          )
+        } else {
+          setAttorneyProfile(null)
+        }
+        setLoading(false)
+      },
+      (error) => {
+        console.error("Auth state error:", error)
+        setUser(null)
         setAttorneyProfile(null)
+        setLoading(false)
       }
-      setLoading(false)
-    })
+    )
     return unsubscribe
   }, [])
 
