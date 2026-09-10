@@ -18,6 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/context/AuthContext"
 
 const navigation = [
   {
@@ -48,6 +49,8 @@ const navigation = [
 ]
 
 export function AppSidebar() {
+  const { signOut } = useAuth()
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-5">
@@ -74,7 +77,7 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenuItem>
-          <SidebarMenuButton>
+          <SidebarMenuButton onClick={() => signOut()}>
             <LogOut className="size-5" />
             <span>Logout</span>
           </SidebarMenuButton>

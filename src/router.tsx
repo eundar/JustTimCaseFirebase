@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router"
 
 import App from "./App"
+import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import Clients from "./pages/Clients"
 import Cases from "./pages/Cases"
@@ -9,6 +10,10 @@ import Appointments from "./pages/Appointments"
 import Settings from "./pages/Settings"
 
 export const router = createBrowserRouter([
+  {
+    path: "/login",
+    Component: Login,
+  },
   {
     path: "/",
     Component: App,
