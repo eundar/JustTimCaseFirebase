@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { UserRoundPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -88,17 +89,28 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add New Client</DialogTitle>
-          <DialogDescription>
-            Enter the client's information to add them to the system.
-          </DialogDescription>
+      <DialogContent className="max-w-xl gap-0 overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="border-b bg-muted/30 px-6 py-5 pr-14">
+          <div className="flex items-start gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <UserRoundPlus className="size-5" aria-hidden="true" />
+            </div>
+            <div className="space-y-1.5">
+              <DialogTitle className="text-lg font-semibold tracking-tight">
+                Add New Client
+              </DialogTitle>
+              <DialogDescription>
+                Add a client's contact information to your firm's records.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5 px-6 py-6">
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name *</Label>
+            <Label htmlFor="name" className="text-sm font-medium">
+              Full Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="name"
               placeholder="Enter client's full name"
@@ -106,54 +118,72 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className={errors.name ? "border-red-500" : ""}
+              aria-invalid={Boolean(errors.name)}
+              className={`h-10 ${errors.name ? "border-destructive" : ""}`}
             />
             {errors.name && (
-              <p className="text-sm text-red-500">{errors.name}</p>
+              <p className="text-sm text-destructive">{errors.name}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="client@example.com"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              className={errors.email ? "border-red-500" : ""}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email}</p>
-            )}
-          </div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">
+                Email <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="client@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                aria-invalid={Boolean(errors.email)}
+                className={`h-10 ${errors.email ? "border-destructive" : ""}`}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number *</Label>
-            <Input
-              id="phone"
-              placeholder="(555) 123-4567"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              className={errors.phone ? "border-red-500" : ""}
-            />
-            {errors.phone && (
-              <p className="text-sm text-red-500">{errors.phone}</p>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-medium">
+                Phone Number <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                inputMode="numeric"
+                placeholder="09123456789"
+                maxLength={11}
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+                aria-invalid={Boolean(errors.phone)}
+                className={`h-10 ${errors.phone ? "border-destructive" : ""}`}
+              />
+              {errors.phone && (
+                <p className="text-sm text-destructive">{errors.phone}</p>
+              )}
+            </div>
           </div>
 
           {submitError && (
-            <p className="text-sm text-red-500">{submitError}</p>
+            <p
+              className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
+              {submitError}
+            </p>
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mx-0 mb-0 rounded-none px-6 py-4">
           <Button
             variant="outline"
+            className="h-10"
             onClick={() => {
               handleReset()
               onOpenChange(false)
@@ -162,7 +192,11 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
+          <Button
+            className="h-10"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
             {submitting ? "Adding..." : "Add Client"}
           </Button>
         </DialogFooter>

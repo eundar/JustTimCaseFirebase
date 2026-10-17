@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { CalendarClock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -131,66 +132,84 @@ export default function ScheduleAppointment({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Schedule Appointment</DialogTitle>
-          <DialogDescription>
-            Create a new appointment with a client and attorney.
-          </DialogDescription>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-xl">
+        <DialogHeader className="border-b bg-muted/30 px-6 py-5 pr-14">
+          <div className="flex items-start gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <CalendarClock className="size-5" aria-hidden="true" />
+            </div>
+            <div className="space-y-1.5">
+              <DialogTitle className="text-lg font-semibold tracking-tight">
+                Schedule Appointment
+              </DialogTitle>
+              <DialogDescription>
+                Set a time to meet with a client and link it to a case if needed.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="client-select">Client *</Label>
-            <Select
-              value={formData.clientId}
-              onValueChange={(value) =>
-                setFormData({ ...formData, clientId: value || "" })
-              }
-            >
-              <SelectTrigger
-                id="client-select"
-                className={errors.clientId ? "border-red-500" : ""}
+        <div className="space-y-5 px-6 py-6">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="client-select" className="text-sm font-medium">
+                Client <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.clientId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, clientId: value || "" })
+                }
               >
-                <SelectValue placeholder="Select a client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.clientId && (
-              <p className="text-sm text-red-500">{errors.clientId}</p>
-            )}
+                <SelectTrigger
+                  id="client-select"
+                  aria-invalid={Boolean(errors.clientId)}
+                  className="h-10 w-full"
+                >
+                  <SelectValue placeholder="Select a client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.clientId && (
+                <p className="text-sm text-destructive">{errors.clientId}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="case-select" className="text-sm font-medium">
+                Case <span className="font-normal text-muted-foreground">(Optional)</span>
+              </Label>
+              <Select
+                value={formData.caseId || ""}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, caseId: value || null })
+                }
+              >
+                <SelectTrigger id="case-select" className="h-10 w-full">
+                  <SelectValue placeholder="Select a case" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {cases.map((caseItem) => (
+                    <SelectItem key={caseItem.id} value={caseItem.id}>
+                      {caseItem.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="case-select">Case (Optional)</Label>
-            <Select
-              value={formData.caseId || ""}
-              onValueChange={(value) =>
-                setFormData({ ...formData, caseId: value || null })
-              }
-            >
-              <SelectTrigger id="case-select">
-                <SelectValue placeholder="Select a case" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {cases.map((caseItem) => (
-                  <SelectItem key={caseItem.id} value={caseItem.id}>
-                    {caseItem.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="type-select">Appointment Type *</Label>
+            <Label htmlFor="type-select" className="text-sm font-medium">
+              Appointment Type <span className="text-destructive">*</span>
+            </Label>
             <Select
               value={formData.type}
               onValueChange={(value) =>
@@ -199,7 +218,8 @@ export default function ScheduleAppointment({
             >
               <SelectTrigger
                 id="type-select"
-                className={errors.type ? "border-red-500" : ""}
+                aria-invalid={Boolean(errors.type)}
+                className="h-10 w-full"
               >
                 <SelectValue placeholder="Select appointment type" />
               </SelectTrigger>
@@ -212,13 +232,15 @@ export default function ScheduleAppointment({
               </SelectContent>
             </Select>
             {errors.type && (
-              <p className="text-sm text-red-500">{errors.type}</p>
+              <p className="text-sm text-destructive">{errors.type}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="date-input">Date *</Label>
+              <Label htmlFor="date-input" className="text-sm font-medium">
+                Date <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="date-input"
                 type="date"
@@ -226,15 +248,18 @@ export default function ScheduleAppointment({
                 onChange={(e) =>
                   setFormData({ ...formData, date: e.target.value })
                 }
-                className={errors.date ? "border-red-500" : ""}
+                aria-invalid={Boolean(errors.date)}
+                className={`h-10 ${errors.date ? "border-destructive" : ""}`}
               />
               {errors.date && (
-                <p className="text-sm text-red-500">{errors.date}</p>
+                <p className="text-sm text-destructive">{errors.date}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="time-input">Time *</Label>
+              <Label htmlFor="time-input" className="text-sm font-medium">
+                Time <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="time-input"
                 type="time"
@@ -242,16 +267,19 @@ export default function ScheduleAppointment({
                 onChange={(e) =>
                   setFormData({ ...formData, time: e.target.value })
                 }
-                className={errors.time ? "border-red-500" : ""}
+                aria-invalid={Boolean(errors.time)}
+                className={`h-10 ${errors.time ? "border-destructive" : ""}`}
               />
               {errors.time && (
-                <p className="text-sm text-red-500">{errors.time}</p>
+                <p className="text-sm text-destructive">{errors.time}</p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location-select">Location *</Label>
+            <Label htmlFor="location-select" className="text-sm font-medium">
+              Location <span className="text-destructive">*</span>
+            </Label>
             <Select
               value={formData.location}
               onValueChange={(value) =>
@@ -260,7 +288,8 @@ export default function ScheduleAppointment({
             >
               <SelectTrigger
                 id="location-select"
-                className={errors.location ? "border-red-500" : ""}
+                aria-invalid={Boolean(errors.location)}
+                className="h-10 w-full"
               >
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
@@ -273,18 +302,24 @@ export default function ScheduleAppointment({
               </SelectContent>
             </Select>
             {errors.location && (
-              <p className="text-sm text-red-500">{errors.location}</p>
+              <p className="text-sm text-destructive">{errors.location}</p>
             )}
           </div>
 
           {submitError && (
-            <p className="text-sm text-red-500">{submitError}</p>
+            <p
+              className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
+              {submitError}
+            </p>
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mx-0 mb-0 rounded-none px-6 py-4">
           <Button
             variant="outline"
+            className="h-10"
             onClick={() => {
               handleReset()
               onOpenChange(false)
@@ -293,7 +328,11 @@ export default function ScheduleAppointment({
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
+          <Button
+            className="h-10"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
             {submitting ? "Scheduling..." : "Schedule"}
           </Button>
         </DialogFooter>

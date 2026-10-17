@@ -8,14 +8,25 @@ import Cases from "./pages/Cases"
 import Documents from "./pages/Documents"
 import Appointments from "./pages/Appointments"
 import Settings from "./pages/Settings"
+import ClientIntakeForm from "./pages/ClientIntakeForm"
+import IntakeForms from "./pages/IntakeForm"
+import LandingPage from "./pages/LandingPage"
 
 export const router = createBrowserRouter([
+  {
+    path: "/",
+    Component: LandingPage,
+  },
+  {
+    path: "/client-intake-form",
+    Component: ClientIntakeForm,
+  },
   {
     path: "/login",
     Component: Login,
   },
   {
-    path: "/",
+    path: "/app",
     Component: App,
     children: [
       {
@@ -37,6 +48,10 @@ export const router = createBrowserRouter([
       {
         path: "appointments",
         Component: Appointments,
+      },
+      {
+        path: "intakeforms",
+        Component: IntakeForms,
       },
       {
         path: "settings",

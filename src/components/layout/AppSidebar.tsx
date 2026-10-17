@@ -25,32 +25,37 @@ const navigation = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
-    path: "/",
+    path: "/app",
   },
   {
     title: "Clients",
     icon: Users,
-    path: "/clients",
+    path: "/app/clients",
   },
   {
     title: "Cases",
     icon: Briefcase,
-    path: "/cases",
+    path: "/app/cases",
   },
   {
     title: "Documents",
     icon: FileText,
-    path: "/documents",
+    path: "/app/documents",
   },
   {
     title: "Appointments",
     icon: CalendarDays,
-    path: "/appointments",
+    path: "/app/appointments",
+  },
+  {
+    title: "Client Intake Forms",
+    icon: FileText,
+    path: "/app/intakeforms",
   },
   {
     title: "Profile",
     icon: UserCircle,
-    path: "/settings",
+    path: "/app/settings",
   },
 ]
 

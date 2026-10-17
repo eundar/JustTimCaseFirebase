@@ -22,5 +22,68 @@ service cloud.firestore {
     match /documents/{docId} {
       allow read, write: if request.auth != null;
     }
+
+    match /prospectiveClients/{docId} {
+      // Anyone can submit a new intake with validated fields.
+  allow create: if
+    request.resource.data.keys().hasAll([
+      'fullName',
+      'email',
+      'phone',
+      'caseType',
+      'caseDescription',
+      'privacyAgreementAccepted',
+      'status',
+      'createdAt'
+    ]) &&
+    request.resource.data.keys().hasOnly([
+      'fullName',
+      'email',
+      'phone',
+      'caseType',
+      'caseDescription',
+      'opposingParty',
+      'privacyAgreementAccepted',
+      'status',
+      'createdAt'
+    ]) &&
+    request.resource.data.fullName is string &&
+    request.resource.data.email is string &&
+    request.resource.data.phone is string &&
+    request.resource.data.caseDescription is string &&
+    request.resource.data.caseType in [
+      'Criminal',
+      'Civil',
+      'Family',
+      'Corporate',
+      'Labor',
+      'Property',
+      'Immigration',
+      'Intellectual Property',
+      'Other'
+    ] &&
+    request.resource.data.privacyAgreementAccepted == true &&
+    request.resource.data.status == 'Pending Review' &&
+    request.resource.data.createdAt is string &&
+    (
+      !('opposingParty' in request.resource.data) ||
+      request.resource.data.opposingParty is string
+    );
+
+  // Any signed-in user can review submitted intakes.
+  allow read: if request.auth != null;
+
+  // Allow status transitions only, not changes to contact details.
+  allow update: if
+    request.auth != null &&
+    resource.data.status == 'Pending Review' &&
+    request.resource.data.status in ['Accepted', 'Declined'] &&
+    request.resource.data.diff(resource.data)
+      .affectedKeys().hasOnly(['status']);
+
+  // Direct deletion is now allowed.
+  allow delete:  if 
+    request.auth != null &&
+    }
   }
 }
