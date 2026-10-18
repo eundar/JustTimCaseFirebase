@@ -1,6 +1,15 @@
 import { useState } from "react"
 import { Link } from "react-router"
-import { Bell, Briefcase, CalendarDays, FileText, Moon, Search, Sun, Users } from "lucide-react"
+import {
+  Bell,
+  Briefcase,
+  CalendarDays,
+  FileText,
+  Moon,
+  Search,
+  Sun,
+  Users,
+} from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -59,7 +68,7 @@ export function AppHeader() {
             icon: Users,
             label: c.name,
             sub: c.email,
-            path: `/clients?search=${encodeURIComponent(c.name)}`,
+            path: `/app/clients?search=${encodeURIComponent(c.name)}`,
           })),
         ...cases
           .filter((c) => matchesSearch(q, [c.id, c.title]))
@@ -69,7 +78,7 @@ export function AppHeader() {
             icon: Briefcase,
             label: c.title,
             sub: c.id,
-            path: `/cases?search=${encodeURIComponent(c.title)}`,
+            path: `/app/cases?search=${encodeURIComponent(c.title)}`,
           })),
         ...appointments
           .filter((a) => matchesSearch(q, [a.type, a.date]))
@@ -79,7 +88,7 @@ export function AppHeader() {
             icon: CalendarDays,
             label: a.type,
             sub: a.date,
-            path: `/appointments?search=${encodeURIComponent(a.date)}`,
+            path: `/app/appointments?search=${encodeURIComponent(a.date)}`,
           })),
         ...documents
           .filter((d) => matchesSearch(q, [d.name, d.type]))
@@ -89,13 +98,13 @@ export function AppHeader() {
             icon: FileText,
             label: d.name,
             sub: d.type,
-            path: `/documents?search=${encodeURIComponent(d.name)}`,
+            path: `/app/documents?search=${encodeURIComponent(d.name)}`,
           })),
       ].slice(0, 8)
     : []
 
   return (
-    <header className="flex h-16 items-center gap-4 border-b px-4">
+    <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4">
       <SidebarTrigger />
 
       <Separator orientation="vertical" className="h-6" />
@@ -154,7 +163,7 @@ export function AppHeader() {
         <Bell />
       </Button>
 
-      <Link to="/settings" className="flex items-center gap-3">
+      <Link to="/app/settings" className="flex items-center gap-3">
         <Avatar>
           <AvatarFallback>{getInitials(attorneyProfile?.name)}</AvatarFallback>
         </Avatar>

@@ -55,37 +55,37 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link to="/clients">
+        <Link to="/app/clients">
           <StatsCard
             title="Total Clients"
             value={statistics.totalClients.toString()}
-            description="+12% from last month"
+            description=""
             icon={Users}
           />
         </Link>
 
-        <Link to="/cases">
+        <Link to="/app/cases">
           <StatsCard
             title="Active Cases"
             value={statistics.activeCases.toString()}
-            description="+5 new cases this month"
+            description=""
             icon={Briefcase}
           />
         </Link>
 
-        <Link to="/documents">
+        <Link to="/app/documents">
           <StatsCard
             title="Documents"
             value={statistics.totalDocuments.toString()}
-            description="+28 this month"
+            description=""
             icon={FileText}
           />
         </Link>
-        <Link to="/appointments">
+        <Link to="/app/appointments">
           <StatsCard
             title="Appointments"
             value={statistics.upcomingAppointments.toString()}
-            description="Upcoming this week"
+            description=""
             icon={CalendarDays}
           />
         </Link>

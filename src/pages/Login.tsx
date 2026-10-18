@@ -42,7 +42,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
 
   if (!loading && user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/app" replace />
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -87,7 +87,7 @@ export default function Login() {
           <div className="mb-8 flex flex-col items-center gap-3">
             <Scale className="h-12 w-12 text-[#e9b949]" strokeWidth={1.5} />
             <h1 className="text-center text-lg font-bold tracking-widest text-white">
-              CLIENT PORTAL LOGIN
+              BURDEOS PORTAL LOGIN
             </h1>
           </div>
 
@@ -184,7 +184,7 @@ export default function Login() {
                   : "CREATE ACCOUNT"}
             </Button>
 
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               className="h-11 w-full border-[#e9b949]/50 bg-transparent text-white hover:bg-white/5"
@@ -195,7 +195,7 @@ export default function Login() {
               {mode === "sign-in"
                 ? "Create an Account"
                 : "Already have an account? Sign in"}
-            </Button>
+            </Button> */}
           </form>
         </div>
 
