@@ -184,7 +184,7 @@ export default function Login() {
                   : "CREATE ACCOUNT"}
             </Button>
 
-            {/* <Button
+             <Button
               type="button"
               variant="outline"
               className="h-11 w-full border-[#e9b949]/50 bg-transparent text-white hover:bg-white/5"
@@ -195,7 +195,7 @@ export default function Login() {
               {mode === "sign-in"
                 ? "Create an Account"
                 : "Already have an account? Sign in"}
-            </Button> */}
+            </Button>
           </form>
         </div>
 
