@@ -52,11 +52,6 @@ const navigation = [
     icon: FileText,
     path: "/app/intakeforms",
   },
-  {
-    title: "Profile",
-    icon: UserCircle,
-    path: "/app/settings",
-  },
 ]
 
 export function AppSidebar() {
@@ -64,14 +59,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-6 py-5">
+      <SidebarHeader className="h-16 border-b px-6 py-5">
         <h1 className="text-lg font-semibold tracking-tight">
           Burdeos Law Firm
         </h1>
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-4">
-        <SidebarGroupLabel className="px-3 pb-2 text-xs tracking-wider uppercase">
+        <SidebarGroupLabel className="px-3 pb-2 text-xs tracking-wider text-[#F8FAFC] uppercase">
           Main Menu
         </SidebarGroupLabel>{" "}
         <SidebarMenu>
@@ -88,6 +83,12 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenuItem>
+          <Link to={"/app/settings"}>
+            <SidebarMenuButton>
+              <UserCircle />
+              Profile
+            </SidebarMenuButton>
+          </Link>
           <SidebarMenuButton onClick={() => signOut()}>
             <LogOut className="size-5" />
             <span>Logout</span>
