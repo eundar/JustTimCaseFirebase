@@ -38,6 +38,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
   const [formData, setFormData] = useState<NewCase>({
     title: "",
     clientId: "",
+    clientName: "",
     type: "Other",
     status: "Active",
     openDate: new Date().toISOString().split("T")[0],
@@ -47,16 +48,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const caseTypes = [
-    "Civil",
-    "Criminal",
-    "Family",
-    "Property",
-    "Personal Injury",
-    "Contract",
-    "Employment",
-    "Other",
-  ]
+  const caseTypes = ["Other"]
 
   const validateForm = (): boolean => {
     const newErrors: Partial<NewCase> = {}
@@ -99,6 +91,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
     setFormData({
       title: "",
       clientId: "",
+      clientName: "",
       type: "Other",
       status: "Active",
       openDate: new Date().toISOString().split("T")[0],
@@ -106,6 +99,12 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
     setErrors({})
     setSubmitError(null)
   }
+  console.log("Selected client ID:", formData.clientId)
+
+  console.log(
+    "Selected client:",
+    clients.find((client) => client.id === formData.clientId)
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -165,7 +164,10 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
                   aria-invalid={Boolean(errors.clientId)}
                   className="h-10"
                 >
-                  <SelectValue placeholder="Select a client" />
+                  <SelectValue>
+                    {clients.find((client) => client.id === formData.clientId)
+                      ?.name ?? "Select a client"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((client) => (
@@ -252,11 +254,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
           >
             Cancel
           </Button>
-          <Button
-            className="h-10"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
+          <Button className="h-10" onClick={handleSubmit} disabled={submitting}>
             {submitting ? "Creating..." : "Create Case"}
           </Button>
         </DialogFooter>
