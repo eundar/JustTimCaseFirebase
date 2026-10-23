@@ -162,7 +162,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
                 <SelectTrigger
                   id="client"
                   aria-invalid={Boolean(errors.clientId)}
-                  className="h-10"
+                  className="h-10 w-full"
                 >
                   <SelectValue>
                     {clients.find((client) => client.id === formData.clientId)
@@ -195,7 +195,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
                 <SelectTrigger
                   id="type"
                   aria-invalid={Boolean(errors.type)}
-                  className="h-10"
+                  className="h-10 w-full"
                 >
                   <SelectValue placeholder="Select case type" />
                 </SelectTrigger>
