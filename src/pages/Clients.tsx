@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-import { Plus, ArrowLeft } from "lucide-react"
+import { Plus, ArrowLeft, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
@@ -37,6 +37,7 @@ export default function Clients() {
     clients: allClients,
     loading: clientsLoading,
     error: clientsError,
+    deleteClient,
   } = useClients()
   const {
     cases: allCases,
@@ -56,6 +57,14 @@ export default function Clients() {
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Clients
+          </Button>
+          <Button
+            variant="delete"
+            size="sm"
+            onClick={() => deleteClient(setSelectedClientId(null))}
+            className="gap-2"
+          >
+            <Trash2 />
           </Button>
         </div>
         <ClientProfile clientId={selectedClientId} />
@@ -77,7 +86,12 @@ export default function Clients() {
 
   const clients = getAllClientsWithCaseCounts(allClients, allCases).filter(
     (client) =>
-      matchesSearch(search, [client.id, client.name, client.email, client.phone])
+      matchesSearch(search, [
+        client.id,
+        client.name,
+        client.email,
+        client.phone,
+      ])
   )
 
   return (
