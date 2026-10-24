@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import type { Appointment } from "@/types/models"
+import type { Appointment } from "@/domain/models"
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useAppointments } from "@/hooks/useAppointments"

@@ -1,4 +1,9 @@
-import type { Client, Case, Appointment, DocumentRecord } from "@/types/models"
+import type {
+  Appointment,
+  Case,
+  Client,
+  DocumentRecord,
+} from "@/domain/models"
 
 export function getClientById(
   clients: Client[],

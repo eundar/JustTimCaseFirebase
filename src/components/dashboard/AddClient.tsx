@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useClients } from "@/hooks/useClients"
 
-import type { Client } from "@/types/models"
+import type { Client } from "@/domain/models"
 
 type NewClient = Omit<Client, "id" | "ownerId">
 

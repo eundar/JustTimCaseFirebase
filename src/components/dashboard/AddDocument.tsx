@@ -23,7 +23,7 @@ import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useDocuments } from "@/hooks/useDocuments"
 
-import type { DocumentRecord } from "@/types/models"
+import type { DocumentRecord } from "@/domain/models"
 
 interface AddDocumentProps {
   open: boolean

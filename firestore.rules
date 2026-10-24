@@ -1,89 +1,140 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /attorneys/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    function isAttorney() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/attorneys/$(request.auth.uid));
     }
 
-    // Shared firm-wide data: any signed-in attorney can read/write any record,
-    // regardless of who created it.
+    function isApprovedIntakeReviewer() {
+      return isAttorney() &&
+        request.auth.token.intakeReviewer == true;
+    }
+
+    function validAttorneyProfile() {
+      return request.resource.data.keys().hasAll([
+          'name',
+          'specialization',
+          'email'
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          'name',
+          'specialization',
+          'email'
+        ]) &&
+        request.resource.data.name is string &&
+        request.resource.data.specialization is string &&
+        request.resource.data.email is string;
+    }
+
+    function ownsExistingRecord() {
+      return isAttorney() &&
+        resource.data.ownerId == request.auth.uid;
+    }
+
+    function ownsNewRecord() {
+      return isAttorney() &&
+        request.resource.data.ownerId == request.auth.uid;
+    }
+
+    function preservesOwner() {
+      return request.resource.data.ownerId == resource.data.ownerId;
+    }
+
+    match /attorneys/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null &&
+        request.auth.uid == uid &&
+        validAttorneyProfile();
+      allow update: if request.auth != null &&
+        request.auth.uid == uid &&
+        validAttorneyProfile();
+    }
+
     match /clients/{docId} {
-      allow read, write: if request.auth != null;
+      allow read, delete: if ownsExistingRecord();
+      allow create: if ownsNewRecord();
+      allow update: if ownsExistingRecord() && preservesOwner();
     }
 
     match /cases/{docId} {
-      allow read, write: if request.auth != null;
+      allow read, delete: if ownsExistingRecord();
+      allow create: if ownsNewRecord();
+      allow update: if ownsExistingRecord() && preservesOwner();
     }
 
     match /appointments/{docId} {
-      allow read, write: if request.auth != null;
+      allow read, delete: if ownsExistingRecord();
+      allow create: if ownsNewRecord();
+      allow update: if ownsExistingRecord() && preservesOwner();
     }
 
     match /documents/{docId} {
-      allow read, write: if request.auth != null;
+      allow read, delete: if ownsExistingRecord();
+      allow create: if ownsNewRecord();
+      allow update: if ownsExistingRecord() && preservesOwner();
     }
 
     match /prospectiveClients/{docId} {
-      // Anyone can submit a new intake with validated fields.
-  allow create: if
-    request.resource.data.keys().hasAll([
-      'fullName',
-      'email',
-      'phone',
-      'caseType',
-      'caseDescription',
-      'privacyAgreementAccepted',
-      'status',
-      'createdAt'
-    ]) &&
-    request.resource.data.keys().hasOnly([
-      'fullName',
-      'email',
-      'phone',
-      'caseType',
-      'caseDescription',
-      'opposingParty',
-      'privacyAgreementAccepted',
-      'status',
-      'createdAt'
-    ]) &&
-    request.resource.data.fullName is string &&
-    request.resource.data.email is string &&
-    request.resource.data.phone is string &&
-    request.resource.data.caseDescription is string &&
-    request.resource.data.caseType in [
-      'Criminal',
-      'Civil',
-      'Family',
-      'Corporate',
-      'Labor',
-      'Property',
-      'Immigration',
-      'Intellectual Property',
-      'Other'
-    ] &&
-    request.resource.data.privacyAgreementAccepted == true &&
-    request.resource.data.status == 'Pending Review' &&
-    request.resource.data.createdAt is string &&
-    (
-      !('opposingParty' in request.resource.data) ||
-      request.resource.data.opposingParty is string
-    );
+      // Public intake creation is schema-limited; review requires a trusted claim.
+      allow create: if request.resource.data.keys().hasAll([
+          'fullName',
+          'email',
+          'phone',
+          'caseType',
+          'caseDescription',
+          'privacyAgreementAccepted',
+          'status',
+          'createdAt'
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          'fullName',
+          'email',
+          'phone',
+          'caseType',
+          'caseDescription',
+          'opposingParty',
+          'privacyAgreementAccepted',
+          'status',
+          'createdAt'
+        ]) &&
+        request.resource.data.fullName is string &&
+        request.resource.data.fullName.size() > 0 &&
+        request.resource.data.fullName.size() <= 200 &&
+        request.resource.data.email is string &&
+        request.resource.data.email.size() <= 320 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() <= 32 &&
+        request.resource.data.caseDescription is string &&
+        request.resource.data.caseDescription.size() > 0 &&
+        request.resource.data.caseDescription.size() <= 10000 &&
+        request.resource.data.caseType in [
+          'Criminal',
+          'Civil',
+          'Family',
+          'Corporate',
+          'Labor',
+          'Property',
+          'Immigration',
+          'Intellectual Property',
+          'Other'
+        ] &&
+        request.resource.data.privacyAgreementAccepted == true &&
+        request.resource.data.status == 'Pending Review' &&
+        request.resource.data.createdAt is string &&
+        (
+          !('opposingParty' in request.resource.data) ||
+          (request.resource.data.opposingParty is string &&
+            request.resource.data.opposingParty.size() <= 200)
+        );
 
-  // Any signed-in user can review submitted intakes.
-  allow read: if request.auth != null;
-
-  // Allow status transitions only, not changes to contact details.
-  allow update: if
-    request.auth != null &&
-    resource.data.status == 'Pending Review' &&
-    request.resource.data.status in ['Accepted', 'Declined'] &&
-    request.resource.data.diff(resource.data)
-      .affectedKeys().hasOnly(['status']);
-
-  // Direct deletion is now allowed.
-  allow delete:  if 
-    request.auth != null &&
+      // Intake review is firm-wide and granted only through an Admin SDK claim.
+      allow read: if isApprovedIntakeReviewer();
+      allow update: if isApprovedIntakeReviewer() &&
+        resource.data.status == 'Pending Review' &&
+        request.resource.data.status in ['Accepted', 'Declined'] &&
+        request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(['status']);
     }
   }
 }

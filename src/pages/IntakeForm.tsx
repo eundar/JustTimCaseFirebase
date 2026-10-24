@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useProspectiveClients } from "@/hooks/useClientIntakeForm"
-import type { ConflictCheckResult } from "@/types/types"
+import type { ConflictCheckResult } from "@/domain/models"
 
 type IntakeStatus = "All" | "Pending Review" | "Accepted" | "Declined"
 
@@ -17,6 +17,7 @@ export default function IntakeForms() {
   const {
     prospectiveClients,
     loading,
+    error,
     acceptProspectiveClient,
     rejectProspectiveClient,
     checkConflictOfInterest,
@@ -116,6 +117,17 @@ export default function IntakeForms() {
 
   if (loading) {
     return <main className="p-6">Loading intake forms...</main>
+  }
+
+  if (error) {
+    return (
+      <main className="mx-auto max-w-3xl p-6">
+        <p className="text-sm text-destructive" role="alert">
+          Intake review is unavailable for this account. Contact an administrator
+          if you need reviewer access.
+        </p>
+      </main>
+    )
   }
 
   return (

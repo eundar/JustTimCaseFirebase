@@ -61,7 +61,10 @@ export default function Clients() {
           <Button
             variant="delete"
             size="sm"
-            onClick={() => deleteClient(setSelectedClientId(null))}
+            onClick={async () => {
+              await deleteClient(selectedClientId)
+              setSelectedClientId(null)
+            }}
             className="gap-2"
           >
             <Trash2 />

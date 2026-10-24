@@ -14,7 +14,8 @@ import {
 } from "firebase/auth"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
-import type { AttorneyProfile } from "@/types/models"
+import type { AttorneyProfile } from "@/domain/models"
+import { parseAttorneyProfile } from "@/domain/models/validation"
 
 interface AuthContextValue {
   user: User | null
@@ -43,15 +44,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       auth,
       async (firebaseUser) => {
         setUser(firebaseUser)
-        if (firebaseUser) {
-          const snap = await getDoc(doc(db, "attorneys", firebaseUser.uid))
-          setAttorneyProfile(
-            snap.exists() ? (snap.data() as AttorneyProfile) : null
-          )
-        } else {
+        try {
+          if (firebaseUser) {
+            const snap = await getDoc(doc(db, "attorneys", firebaseUser.uid))
+            setAttorneyProfile(
+              snap.exists() ? parseAttorneyProfile(snap.data()) : null
+            )
+          } else {
+            setAttorneyProfile(null)
+          }
+        } catch (error) {
+          console.error("Attorney profile load error:", error)
           setAttorneyProfile(null)
+        } finally {
+          setLoading(false)
         }
-        setLoading(false)
       },
       (error) => {
         console.error("Auth state error:", error)

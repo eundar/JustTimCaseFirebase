@@ -1,39 +1,33 @@
 import { useEffect, useState } from "react"
-import { addDoc, collection, deleteDoc, doc, onSnapshot } from "firebase/firestore"
-import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage"
-import { db, storage } from "@/lib/firebase"
 import { useAuth } from "@/context/AuthContext"
-import type { DocumentRecord } from "@/types/models"
-
-type NewDocumentMetadata = {
-  name: string
-  caseId: string
-  clientId: string
-  type: DocumentRecord["type"]
-}
+import type { DocumentRecord } from "@/domain/models"
+import {
+  documentRepository,
+  type NewDocumentMetadata,
+} from "@/data/repositories/DocumentRepository"
+import { RepositoryError } from "@/data/repositories/RepositoryError"
 
 export function useDocuments() {
   const { user } = useAuth()
+  const userId = user?.uid
   const [documents, setDocuments] = useState<DocumentRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDocuments([])
+      setError(null)
       setLoading(false)
       return
     }
     setLoading(true)
-    const unsubscribe = onSnapshot(
-      collection(db, "documents"),
-      (snapshot) => {
-        setDocuments(
-          snapshot.docs.map(
-            (d) => ({ id: d.id, ...d.data() }) as DocumentRecord
-          )
-        )
+    setError(null)
+    const unsubscribe = documentRepository.subscribe(
+      userId,
+      (records) => {
+        setDocuments(records)
         setLoading(false)
       },
       (err) => {
@@ -42,34 +36,19 @@ export function useDocuments() {
       }
     )
     return unsubscribe
-  }, [user])
+  }, [userId])
 
   const uploadDocument = async (
     file: File,
     metadata: NewDocumentMetadata
   ) => {
-    if (!user) throw new Error("Not authenticated")
-    const docId = crypto.randomUUID()
-    const storagePath = `documents/${user.uid}/${docId}/${file.name}`
-    const storageRef = ref(storage, storagePath)
-    await uploadBytes(storageRef, file)
-    const url = await getDownloadURL(storageRef)
-    const sizeInMb = (file.size / (1024 * 1024)).toFixed(1)
-    await addDoc(collection(db, "documents"), {
-      ...metadata,
-      ownerId: user.uid,
-      uploadedDate: new Date().toISOString().split("T")[0],
-      size: `${sizeInMb} MB`,
-      url,
-      storagePath,
-    })
+    if (!userId) throw new RepositoryError("Upload document", new Error("Not authenticated"))
+    await documentRepository.upload(userId, file, metadata)
   }
 
   const deleteDocument = async (id: string, storagePath: string) => {
-    if (storagePath) {
-      await deleteObject(ref(storage, storagePath))
-    }
-    await deleteDoc(doc(db, "documents", id))
+    if (!userId) throw new RepositoryError("Delete document", new Error("Not authenticated"))
+    await documentRepository.deleteDocument(userId, id, storagePath)
   }
 
   return { documents, loading, error, uploadDocument, deleteDocument }

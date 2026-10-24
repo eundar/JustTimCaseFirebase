@@ -23,7 +23,7 @@ import {
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 
-import type { Case } from "@/types/models"
+import type { Case } from "@/domain/models"
 
 type NewCase = Omit<Case, "id" | "ownerId">
 
