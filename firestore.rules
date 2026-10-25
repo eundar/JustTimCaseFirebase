@@ -6,11 +6,6 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/attorneys/$(request.auth.uid));
     }
 
-    function isApprovedIntakeReviewer() {
-      return isAttorney() &&
-        request.auth.token.intakeReviewer == true;
-    }
-
     function validAttorneyProfile() {
       return request.resource.data.keys().hasAll([
           'name',
@@ -27,11 +22,7 @@ service cloud.firestore {
         request.resource.data.email is string;
     }
 
-    function ownsExistingRecord() {
-      return isAttorney() &&
-        resource.data.ownerId == request.auth.uid;
-    }
-
+    // New records are stamped with the attorney who created them.
     function ownsNewRecord() {
       return isAttorney() &&
         request.resource.data.ownerId == request.auth.uid;
@@ -41,38 +32,46 @@ service cloud.firestore {
       return request.resource.data.ownerId == resource.data.ownerId;
     }
 
+    // Anyone with an attorneys/{uid} profile is a firm member with access to
+    // every feature. Profiles are readable firm-wide but self-managed.
     match /attorneys/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read: if isAttorney() ||
+        (request.auth != null && request.auth.uid == uid);
       allow create: if request.auth != null &&
         request.auth.uid == uid &&
         validAttorneyProfile();
       allow update: if request.auth != null &&
         request.auth.uid == uid &&
         validAttorneyProfile();
+
+      match /{document=**} {
+        allow read, write: if isAttorney();
+      }
     }
 
+    // Firm-wide data: every attorney can read and manage every record.
     match /clients/{docId} {
-      allow read, delete: if ownsExistingRecord();
+      allow read, delete: if isAttorney();
       allow create: if ownsNewRecord();
-      allow update: if ownsExistingRecord() && preservesOwner();
+      allow update: if isAttorney() && preservesOwner();
     }
 
     match /cases/{docId} {
-      allow read, delete: if ownsExistingRecord();
+      allow read, delete: if isAttorney();
       allow create: if ownsNewRecord();
-      allow update: if ownsExistingRecord() && preservesOwner();
+      allow update: if isAttorney() && preservesOwner();
     }
 
     match /appointments/{docId} {
-      allow read, delete: if ownsExistingRecord();
+      allow read, delete: if isAttorney();
       allow create: if ownsNewRecord();
-      allow update: if ownsExistingRecord() && preservesOwner();
+      allow update: if isAttorney() && preservesOwner();
     }
 
     match /documents/{docId} {
-      allow read, delete: if ownsExistingRecord();
+      allow read, delete: if isAttorney();
       allow create: if ownsNewRecord();
-      allow update: if ownsExistingRecord() && preservesOwner();
+      allow update: if isAttorney() && preservesOwner();
     }
 
     match /prospectiveClients/{docId} {
@@ -128,9 +127,9 @@ service cloud.firestore {
             request.resource.data.opposingParty.size() <= 200)
         );
 
-      // Intake review is firm-wide and granted only through an Admin SDK claim.
-      allow read: if isApprovedIntakeReviewer();
-      allow update: if isApprovedIntakeReviewer() &&
+      // Intake review is open to every attorney.
+      allow read, delete: if isAttorney();
+      allow update: if isAttorney() &&
         resource.data.status == 'Pending Review' &&
         request.resource.data.status in ['Accepted', 'Declined'] &&
         request.resource.data.diff(resource.data)

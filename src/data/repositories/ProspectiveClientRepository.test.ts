@@ -4,12 +4,12 @@ const firebase = vi.hoisted(() => ({
   auth: {
     currentUser: {
       uid: "attorney-1",
-      getIdTokenResult: vi.fn(),
     },
   },
   db: {},
   collection: vi.fn((_database: unknown, name: string) => ({ name })),
   doc: vi.fn((_database: unknown, ...segments: string[]) => ({ segments })),
+  getDoc: vi.fn(),
   getDocs: vi.fn(),
   query: vi.fn((...parts: unknown[]) => ({ parts })),
   orderBy: vi.fn((...parts: unknown[]) => ({ orderBy: parts })),
@@ -18,6 +18,7 @@ const firebase = vi.hoisted(() => ({
 vi.mock("firebase/firestore", () => ({
   collection: firebase.collection,
   doc: firebase.doc,
+  getDoc: firebase.getDoc,
   getDocs: firebase.getDocs,
   query: firebase.query,
   orderBy: firebase.orderBy,
@@ -33,22 +34,18 @@ import { prospectiveClientRepository } from "./ProspectiveClientRepository"
 describe("ProspectiveClientRepository", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    firebase.auth.currentUser.getIdTokenResult.mockResolvedValue({
-      claims: { intakeReviewer: false },
-    })
+    firebase.getDoc.mockResolvedValue({ exists: () => false })
   })
 
-  it("denies review reads without the trusted reviewer claim", async () => {
+  it("denies review reads to accounts without an attorney profile", async () => {
     await expect(
       prospectiveClientRepository.listForReview()
-    ).rejects.toThrow("not been approved")
+    ).rejects.toThrow("does not have an attorney profile")
     expect(firebase.getDocs).not.toHaveBeenCalled()
   })
 
-  it("loads review records only after the reviewer claim is present", async () => {
-    firebase.auth.currentUser.getIdTokenResult.mockResolvedValue({
-      claims: { intakeReviewer: true },
-    })
+  it("loads review records for any attorney", async () => {
+    firebase.getDoc.mockResolvedValue({ exists: () => true })
     firebase.getDocs.mockResolvedValue({
       docs: [
         {
@@ -80,6 +77,11 @@ describe("ProspectiveClientRepository", () => {
         createdAt: "2026-10-24T00:00:00.000Z",
       },
     ])
+    expect(firebase.doc).toHaveBeenCalledWith(
+      firebase.db,
+      "attorneys",
+      "attorney-1"
+    )
     expect(firebase.getDocs).toHaveBeenCalledOnce()
   })
 })

@@ -5,9 +5,7 @@ import {
   doc,
   getDocs,
   onSnapshot,
-  query,
   updateDoc,
-  where,
   type DocumentData,
 } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
@@ -48,13 +46,10 @@ export abstract class OwnedFirestoreRepository<T extends OwnedRecord> {
     onError: (error: RepositoryError) => void
   ): () => void {
     this.assertOwner(ownerId, `Subscribe to ${this.collectionName}`)
-    const ownedQuery = query(
-      collection(db, this.collectionName),
-      where("ownerId", "==", ownerId)
-    )
 
+    // Records are shared firm-wide, so every attorney sees the whole collection.
     return onSnapshot(
-      ownedQuery,
+      collection(db, this.collectionName),
       (snapshot) => {
         try {
           onData(
@@ -74,12 +69,7 @@ export abstract class OwnedFirestoreRepository<T extends OwnedRecord> {
   async list(ownerId: string): Promise<T[]> {
     this.assertOwner(ownerId, `List ${this.collectionName}`)
     try {
-      const snapshot = await getDocs(
-        query(
-          collection(db, this.collectionName),
-          where("ownerId", "==", ownerId)
-        )
-      )
+      const snapshot = await getDocs(collection(db, this.collectionName))
       return snapshot.docs.map((item) =>
         this.parseRecord(item.id, item.data())
       )

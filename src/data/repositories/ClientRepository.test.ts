@@ -48,7 +48,7 @@ describe("ClientRepository", () => {
     firebase.deleteDoc.mockResolvedValue(undefined)
   })
 
-  it("filters subscription queries by owner and parses returned records", () => {
+  it("subscribes to the whole firm-wide collection and parses returned records", () => {
     const onData = vi.fn()
     const onError = vi.fn()
     const unsubscribe = vi.fn()
@@ -68,7 +68,7 @@ describe("ClientRepository", () => {
         {
           id: "client-1",
           data: () => ({
-            ownerId: "attorney-1",
+            ownerId: "attorney-2",
             name: "Morgan Client",
             email: "morgan@example.com",
             phone: "555-0100",
@@ -77,15 +77,16 @@ describe("ClientRepository", () => {
       ],
     })
 
-    expect(firebase.where).toHaveBeenCalledWith(
-      "ownerId",
-      "==",
-      "attorney-1"
+    expect(firebase.where).not.toHaveBeenCalled()
+    expect(firebase.onSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "clients" }),
+      expect.any(Function),
+      expect.any(Function)
     )
     expect(onData).toHaveBeenCalledWith([
       {
         id: "client-1",
-        ownerId: "attorney-1",
+        ownerId: "attorney-2",
         name: "Morgan Client",
         email: "morgan@example.com",
         phone: "555-0100",

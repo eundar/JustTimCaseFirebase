@@ -20,19 +20,20 @@ export type NewProspectiveClient = Omit<
 >
 
 export class ProspectiveClientRepository {
+  // Every attorney (anyone with an attorneys/{uid} profile) can review intakes.
   private async requireReviewer(operation: string): Promise<void> {
     const user = auth.currentUser
     if (!user) {
       throw new RepositoryError(
         operation,
-        new Error("An authenticated intake reviewer is required.")
+        new Error("An authenticated attorney is required.")
       )
     }
 
     try {
-      const token = await user.getIdTokenResult()
-      if (token.claims.intakeReviewer !== true) {
-        throw new Error("This account has not been approved to review intakes.")
+      const profile = await getDoc(doc(db, "attorneys", user.uid))
+      if (!profile.exists()) {
+        throw new Error("This account does not have an attorney profile.")
       }
     } catch (error) {
       throw toRepositoryError(operation, error)
