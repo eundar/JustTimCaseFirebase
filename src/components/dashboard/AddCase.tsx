@@ -156,6 +156,9 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
                   setFormData({
                     ...formData,
                     clientId: value as NewCase["clientId"],
+                    clientName:
+                      clients.find((client) => client.id === value)?.name ??
+                      "",
                   })
                 }
               >

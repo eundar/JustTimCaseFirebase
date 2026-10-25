@@ -108,7 +108,8 @@ export function parseCase(id: string, value: unknown): Case {
     ownerId,
     title: requiredString(data, "title", "case"),
     clientId: requiredString(data, "clientId", "case"),
-    clientName: requiredString(data, "clientName", "case"),
+    // Older cases were saved without a clientName (or with ""), so tolerate it.
+    clientName: optionalString(data, "clientName", "case") ?? "",
     ...(opposingParty === undefined ? {} : { opposingParty }),
     type: enumValue(data.type, caseTypes, "type", "case"),
     status: enumValue(data.status, ["Active", "Pending", "Closed"], "status", "case"),
