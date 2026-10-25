@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react"
 import { Navigate } from "react-router"
 import { sendPasswordResetEmail } from "firebase/auth"
-import { Briefcase, Eye, EyeOff, Lock, Mail, Scale, User } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, Scale } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { auth } from "@/lib/firebase"
@@ -10,15 +10,11 @@ import { useAuth } from "@/context/AuthContext"
 function authErrorMessage(error: unknown): string {
   const code = (error as { code?: string })?.code
   switch (code) {
-    case "auth/email-already-in-use":
-      return "An account with this email already exists."
     case "auth/invalid-credential":
     case "auth/wrong-password":
       return "Incorrect email or password."
     case "auth/user-not-found":
       return "No account found with this email."
-    case "auth/weak-password":
-      return "Password must be at least 6 characters."
     case "auth/invalid-email":
       return "Enter a valid email address."
     default:
@@ -30,12 +26,9 @@ const fieldClassName =
   "h-11 w-full rounded-lg border-[#2a3a66] bg-[#101f45] text-sm text-white placeholder:text-white/40 focus-visible:border-[#e9b949] focus-visible:ring-[#e9b949]/30"
 
 export default function Login() {
-  const { user, loading, signIn, signUp } = useAuth()
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in")
+  const { user, loading, signIn } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [name, setName] = useState("")
-  const [specialization, setSpecialization] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
@@ -51,11 +44,7 @@ export default function Login() {
     setInfo(null)
     setSubmitting(true)
     try {
-      if (mode === "sign-in") {
-        await signIn(email, password)
-      } else {
-        await signUp(email, password, name, specialization)
-      }
+      await signIn(email, password)
     } catch (err) {
       setError(authErrorMessage(err))
     } finally {
@@ -92,33 +81,6 @@ export default function Login() {
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {mode === "sign-up" && (
-              <>
-                <div className="relative">
-                  <User className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-white/40" />
-                  <Input
-                    className={fieldClassName}
-                    style={{ paddingLeft: "2.25rem", paddingRight: "0.75rem" }}
-                    placeholder="Full Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="relative">
-                  <Briefcase className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-white/40" />
-                  <Input
-                    className={fieldClassName}
-                    style={{ paddingLeft: "2.25rem", paddingRight: "0.75rem" }}
-                    placeholder="Specialization"
-                    value={specialization}
-                    onChange={(e) => setSpecialization(e.target.value)}
-                    required
-                  />
-                </div>
-              </>
-            )}
-
             <div className="relative">
               <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-white/40" />
               <Input
@@ -157,17 +119,15 @@ export default function Login() {
               </button>
             </div>
 
-            {mode === "sign-in" && (
-              <div className="text-right">
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  className="text-xs text-white/60 hover:text-[#e9b949] hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            )}
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-xs text-white/60 hover:text-[#e9b949] hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
 
             {error && <p className="text-sm text-red-400">{error}</p>}
             {info && <p className="text-sm text-emerald-400">{info}</p>}
@@ -177,24 +137,7 @@ export default function Login() {
               className="h-11 w-full bg-[#e9b949] font-semibold tracking-wide text-[#0b1730] hover:bg-[#f2c65f]"
               disabled={submitting}
             >
-              {submitting
-                ? "Please wait..."
-                : mode === "sign-in"
-                  ? "LOGIN"
-                  : "CREATE ACCOUNT"}
-            </Button>
-
-             <Button
-              type="button"
-              variant="outline"
-              className="h-11 w-full border-[#e9b949]/50 bg-transparent text-white hover:bg-white/5"
-              onClick={() =>
-                setMode(mode === "sign-in" ? "sign-up" : "sign-in")
-              }
-            >
-              {mode === "sign-in"
-                ? "Create an Account"
-                : "Already have an account? Sign in"}
+              {submitting ? "Please wait..." : "LOGIN"}
             </Button>
           </form>
         </div>
