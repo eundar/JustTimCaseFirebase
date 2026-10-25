@@ -128,8 +128,10 @@ describe("ClientRepository", () => {
     expect(firebase.getDocs).not.toHaveBeenCalled()
   })
 
-  it("rejects malformed Firestore records rather than casting them", () => {
+  it("skips malformed Firestore records instead of failing the whole list", () => {
+    const onData = vi.fn()
     const onError = vi.fn()
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
     firebase.onSnapshot.mockImplementation((_query, next) => {
       next({
         docs: [
@@ -137,16 +139,48 @@ describe("ClientRepository", () => {
             id: "bad-client",
             data: () => ({ ownerId: "attorney-1", name: 32 }),
           },
+          {
+            id: "good-client",
+            data: () => ({
+              ownerId: "attorney-2",
+              name: "Morgan Client",
+              email: "morgan@example.com",
+              phone: "555-0100",
+            }),
+          },
         ],
       })
       return vi.fn()
     })
 
+    clientRepository.subscribe("attorney-1", onData, onError)
+    expect(onData).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "good-client" }),
+    ])
+    expect(onError).not.toHaveBeenCalled()
+    expect(warn).toHaveBeenCalledWith(
+      "Skipping invalid clients/bad-client:",
+      expect.stringContaining("name")
+    )
+    warn.mockRestore()
+  })
+
+  it("logs and reports Firestore listener errors", () => {
+    const onError = vi.fn()
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {})
+    firebase.onSnapshot.mockImplementation((_query, _next, fail) => {
+      fail(new Error("Missing or insufficient permissions."))
+      return vi.fn()
+    })
+
     clientRepository.subscribe("attorney-1", vi.fn(), onError)
     expect(onError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        operation: "Parse clients",
-      })
+      expect.objectContaining({ operation: "Subscribe to clients" })
     )
+    expect(logged).toHaveBeenCalledWith(
+      expect.stringContaining("Missing or insufficient permissions"),
+      expect.any(Error)
+    )
+    logged.mockRestore()
   })
 })

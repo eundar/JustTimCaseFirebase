@@ -50,29 +50,41 @@ export abstract class OwnedFirestoreRepository<T extends OwnedRecord> {
     // Records are shared firm-wide, so every attorney sees the whole collection.
     return onSnapshot(
       collection(db, this.collectionName),
-      (snapshot) => {
-        try {
-          onData(
-            snapshot.docs.map((item) =>
-              this.parseRecord(item.id, item.data())
-            )
-          )
-        } catch (error) {
-          onError(toRepositoryError(`Parse ${this.collectionName}`, error))
-        }
-      },
-      (error) =>
-        onError(toRepositoryError(`Subscribe to ${this.collectionName}`, error))
+      (snapshot) => onData(this.parseValidRecords(snapshot.docs)),
+      (error) => {
+        const repositoryError = toRepositoryError(
+          `Subscribe to ${this.collectionName}`,
+          error
+        )
+        console.error(repositoryError.message, error)
+        onError(repositoryError)
+      }
     )
+  }
+
+  // One malformed record must not hide the rest of the firm's data, so invalid
+  // records are skipped (and logged) instead of failing the whole collection.
+  private parseValidRecords(
+    docs: { id: string; data: () => DocumentData }[]
+  ): T[] {
+    return docs.flatMap((item) => {
+      try {
+        return [this.parseRecord(item.id, item.data())]
+      } catch (error) {
+        console.warn(
+          `Skipping invalid ${this.collectionName}/${item.id}:`,
+          error instanceof Error ? error.message : error
+        )
+        return []
+      }
+    })
   }
 
   async list(ownerId: string): Promise<T[]> {
     this.assertOwner(ownerId, `List ${this.collectionName}`)
     try {
       const snapshot = await getDocs(collection(db, this.collectionName))
-      return snapshot.docs.map((item) =>
-        this.parseRecord(item.id, item.data())
-      )
+      return this.parseValidRecords(snapshot.docs)
     } catch (error) {
       throw toRepositoryError(`List ${this.collectionName}`, error)
     }
