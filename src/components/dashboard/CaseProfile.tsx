@@ -22,6 +22,7 @@ import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useAppointments } from "@/hooks/useAppointments"
 import { useDocuments } from "@/hooks/useDocuments"
+import { CaseNotes } from "@/components/dashboard/CaseNotes"
 import {
   getCaseById,
   getClientById,
@@ -147,6 +148,13 @@ export function CaseProfile({ caseId }: CaseProfileProps) {
           </div>
         </CardContent>
       </Card>
+
+      <CaseNotes
+        caseItem={caseData}
+        client={client}
+        appointments={allAppointments}
+        documents={allDocuments}
+      />
 
       {/* Statistics */}
       <div className="grid gap-4 md:grid-cols-2">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { UserRoundPlus } from "lucide-react"
+import { UserRoundPen, UserRoundPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,21 +15,28 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useClients } from "@/hooks/useClients"
 
-import type { Client } from "@/types/models"
+import type { Client } from "@/domain/models"
 
 type NewClient = Omit<Client, "id" | "ownerId">
 
 interface AddClientProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  // When set, the dialog edits this client instead of adding a new one.
+  client?: Client
 }
 
-export default function AddClient({ open, onOpenChange }: AddClientProps) {
-  const { addClient } = useClients()
+export default function AddClient({
+  open,
+  onOpenChange,
+  client,
+}: AddClientProps) {
+  const { addClient, updateClient } = useClients()
+  const isEditing = Boolean(client)
   const [formData, setFormData] = useState<NewClient>({
-    name: "",
-    email: "",
-    phone: "",
+    name: client?.name ?? "",
+    email: client?.email ?? "",
+    phone: client?.phone ?? "",
   })
 
   const [errors, setErrors] = useState<Partial<NewClient>>({})
@@ -67,7 +74,11 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await addClient(formData)
+      if (client) {
+        await updateClient(client.id, formData)
+      } else {
+        await addClient(formData)
+      }
       handleReset()
       onOpenChange(false)
     } catch (err) {
@@ -93,14 +104,20 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
         <DialogHeader className="border-b bg-muted/30 px-6 py-5 pr-14">
           <div className="flex items-start gap-4">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <UserRoundPlus className="size-5" aria-hidden="true" />
+              {isEditing ? (
+                <UserRoundPen className="size-5" aria-hidden="true" />
+              ) : (
+                <UserRoundPlus className="size-5" aria-hidden="true" />
+              )}
             </div>
             <div className="space-y-1.5">
               <DialogTitle className="text-lg font-semibold tracking-tight">
-                Add New Client
+                {isEditing ? "Edit Client" : "Add New Client"}
               </DialogTitle>
               <DialogDescription>
-                Add a client's contact information to your firm's records.
+                {isEditing
+                  ? "Update this client's contact information."
+                  : "Add a client's contact information to your firm's records."}
               </DialogDescription>
             </div>
           </div>
@@ -192,12 +209,14 @@ export default function AddClient({ open, onOpenChange }: AddClientProps) {
           >
             Cancel
           </Button>
-          <Button
-            className="h-10"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting ? "Adding..." : "Add Client"}
+          <Button className="h-10" onClick={handleSubmit} disabled={submitting}>
+            {isEditing
+              ? submitting
+                ? "Saving..."
+                : "Save Changes"
+              : submitting
+                ? "Adding..."
+                : "Add Client"}
           </Button>
         </DialogFooter>
       </DialogContent>

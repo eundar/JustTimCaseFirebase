@@ -1,29 +1,20 @@
+import { lazy } from "react"
 import { createBrowserRouter } from "react-router"
 
 import App from "./App"
-import Login from "./pages/Login"
-import Dashboard from "./pages/Dashboard"
-import Clients from "./pages/Clients"
-import Cases from "./pages/Cases"
-import Documents from "./pages/Documents"
-import Appointments from "./pages/Appointments"
-import Settings from "./pages/Settings"
-import ClientIntakeForm from "./pages/ClientIntakeForm"
-import IntakeForms from "./pages/IntakeForm"
-import LandingPage from "./pages/LandingPage"
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    Component: LandingPage,
+    Component: lazy(() => import("./pages/LandingPage")),
   },
   {
     path: "/client-intake-form",
-    Component: ClientIntakeForm,
+    Component: lazy(() => import("./pages/ClientIntakeForm")),
   },
   {
     path: "/login",
-    Component: Login,
+    Component: lazy(() => import("./pages/Login")),
   },
   {
     path: "/app",
@@ -31,31 +22,31 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        Component: Dashboard,
+        Component: lazy(() => import("./pages/Dashboard")),
       },
       {
         path: "clients",
-        Component: Clients,
+        Component: lazy(() => import("./pages/Clients")),
       },
       {
         path: "cases",
-        Component: Cases,
+        Component: lazy(() => import("./pages/Cases")),
       },
       {
         path: "documents",
-        Component: Documents,
+        Component: lazy(() => import("./pages/Documents")),
       },
       {
         path: "appointments",
-        Component: Appointments,
+        Component: lazy(() => import("./pages/Appointments")),
       },
       {
         path: "intakeforms",
-        Component: IntakeForms,
+        Component: lazy(() => import("./pages/IntakeForm")),
       },
       {
         path: "settings",
-        Component: Settings,
+        Component: lazy(() => import("./pages/Settings")),
       },
     ],
   },

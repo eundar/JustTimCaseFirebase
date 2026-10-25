@@ -1,36 +1,30 @@
 import { useEffect, useState } from "react"
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  updateDoc,
-} from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { useAuth } from "@/context/AuthContext"
-import type { Appointment } from "@/types/models"
+import type { Appointment } from "@/domain/models"
+import { appointmentRepository } from "@/data/repositories/AppointmentRepository"
+import { RepositoryError } from "@/data/repositories/RepositoryError"
 
 export function useAppointments() {
   const { user } = useAuth()
+  const userId = user?.uid
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAppointments([])
+      setError(null)
       setLoading(false)
       return
     }
     setLoading(true)
-    const unsubscribe = onSnapshot(
-      collection(db, "appointments"),
-      (snapshot) => {
-        setAppointments(
-          snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment)
-        )
+    setError(null)
+    const unsubscribe = appointmentRepository.subscribe(
+      userId,
+      (records) => {
+        setAppointments(records)
         setLoading(false)
       },
       (err) => {
@@ -39,27 +33,26 @@ export function useAppointments() {
       }
     )
     return unsubscribe
-  }, [user])
+  }, [userId])
 
   const addAppointment = async (
     appointment: Omit<Appointment, "id" | "ownerId">
   ) => {
-    if (!user) throw new Error("Not authenticated")
-    await addDoc(collection(db, "appointments"), {
-      ...appointment,
-      ownerId: user.uid,
-    })
+    if (!userId) throw new RepositoryError("Create appointment", new Error("Not authenticated"))
+    await appointmentRepository.create(userId, appointment)
   }
 
   const updateAppointment = async (
     id: string,
     updates: Partial<Omit<Appointment, "id" | "ownerId">>
   ) => {
-    await updateDoc(doc(db, "appointments", id), updates)
+    if (!userId) throw new RepositoryError("Update appointment", new Error("Not authenticated"))
+    await appointmentRepository.update(userId, id, updates)
   }
 
   const deleteAppointment = async (id: string) => {
-    await deleteDoc(doc(db, "appointments", id))
+    if (!userId) throw new RepositoryError("Delete appointment", new Error("Not authenticated"))
+    await appointmentRepository.delete(userId, id)
   }
 
   return {

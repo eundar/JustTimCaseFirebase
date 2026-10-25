@@ -22,12 +22,15 @@ import {
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useDocuments } from "@/hooks/useDocuments"
+import { isGoogleDriveUrl } from "@/domain/models/validation"
 
-import type { DocumentRecord } from "@/types/models"
+import type { DocumentRecord } from "@/domain/models"
 
 interface AddDocumentProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  // When set, the dialog edits this document's details instead of uploading.
+  document?: DocumentRecord
 }
 
 const documentTypes: DocumentRecord["type"][] = [
@@ -39,27 +42,53 @@ const documentTypes: DocumentRecord["type"][] = [
 ]
 
 interface FormState {
+  name: string
   caseId: string
   clientId: string
   type: DocumentRecord["type"] | ""
   file: File | null
+  link: string
 }
 
+// A document is either an uploaded file or a Google Drive / Docs link.
+type DocumentSource = "file" | "link"
+
 const emptyForm: FormState = {
+  name: "",
   caseId: "",
   clientId: "",
   type: "",
   file: null,
+  link: "",
 }
 
 export default function AddDocument({
   open,
   onOpenChange,
+  document,
 }: AddDocumentProps) {
   const { clients } = useClients()
   const { cases } = useCases()
-  const { uploadDocument } = useDocuments()
-  const [formData, setFormData] = useState<FormState>(emptyForm)
+  const { uploadDocument, addDocumentLink, updateDocument } = useDocuments()
+  const isEditing = Boolean(document)
+  const isEditingLink = Boolean(
+    document && !document.storagePath && isGoogleDriveUrl(document.url)
+  )
+  const [source, setSource] = useState<DocumentSource>("file")
+  const [formData, setFormData] = useState<FormState>(
+    document
+      ? {
+          name: document.name,
+          caseId: document.caseId,
+          clientId: document.clientId,
+          type: document.type,
+          file: null,
+          link: isEditingLink ? document.url : "",
+        }
+      : emptyForm
+  )
+  const showNameField = isEditing || source === "link"
+  const showLinkField = isEditing ? isEditingLink : source === "link"
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({})
@@ -81,7 +110,20 @@ export default function AddDocument({
       newErrors.type = "Document type is required"
     }
 
-    if (!formData.file) {
+    if (showNameField && !formData.name.trim()) {
+      newErrors.name = "Document name is required"
+    }
+
+    if (showLinkField) {
+      if (!formData.link.trim()) {
+        newErrors.link = "A Google Drive or Docs link is required"
+      } else if (!isGoogleDriveUrl(formData.link)) {
+        newErrors.link =
+          "Enter a link that starts with https://drive.google.com or https://docs.google.com"
+      }
+    }
+
+    if (!isEditing && source === "file" && !formData.file) {
       newErrors.file = "A file is required"
     }
 
@@ -96,13 +138,37 @@ export default function AddDocument({
   }
 
   const handleSubmit = async () => {
-    if (!validateForm() || !formData.file || !formData.type) {
+    if (!validateForm() || !formData.type) {
       return
     }
 
     setSubmitting(true)
     setSubmitError(null)
     try {
+      if (document) {
+        await updateDocument(document.id, {
+          name: formData.name.trim(),
+          caseId: formData.caseId,
+          clientId: formData.clientId,
+          type: formData.type,
+          ...(isEditingLink ? { url: formData.link.trim() } : {}),
+        })
+        handleReset()
+        onOpenChange(false)
+        return
+      }
+      if (source === "link") {
+        await addDocumentLink(formData.link, {
+          name: formData.name.trim(),
+          caseId: formData.caseId,
+          clientId: formData.clientId,
+          type: formData.type,
+        })
+        handleReset()
+        onOpenChange(false)
+        return
+      }
+      if (!formData.file) return
       await uploadDocument(formData.file, {
         name: formData.file.name,
         caseId: formData.caseId,
@@ -113,7 +179,11 @@ export default function AddDocument({
       onOpenChange(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : "Failed to upload document"
+        err instanceof Error
+          ? err.message
+          : isEditing
+            ? "Failed to save document"
+            : "Failed to upload document"
       )
     } finally {
       setSubmitting(false)
@@ -124,13 +194,61 @@ export default function AddDocument({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Document</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit Document" : "Upload Document"}
+          </DialogTitle>
           <DialogDescription>
-            Attach a file to a client and case.
+            {isEditing
+              ? "Rename the document or change its client, case, or type."
+              : "Attach a file or a Google Drive / Docs link to a client and case."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {!isEditing && (
+            <div
+              className="grid grid-cols-2 gap-2"
+              role="radiogroup"
+              aria-label="Document source"
+            >
+              <Button
+                type="button"
+                role="radio"
+                aria-checked={source === "file"}
+                variant={source === "file" ? "default" : "outline"}
+                onClick={() => setSource("file")}
+              >
+                Upload file
+              </Button>
+              <Button
+                type="button"
+                role="radio"
+                aria-checked={source === "link"}
+                variant={source === "link" ? "default" : "outline"}
+                onClick={() => setSource("link")}
+              >
+                Google Drive link
+              </Button>
+            </div>
+          )}
+
+          {showNameField && (
+            <div className="space-y-2">
+              <Label htmlFor="name">Document Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className={errors.name ? "border-red-500" : ""}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name}</p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="client">Client *</Label>
             <Select
@@ -206,27 +324,52 @@ export default function AddDocument({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="file">File *</Label>
-            <Input
-              id="file"
-              type="file"
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  file: e.target.files?.[0] ?? null,
-                })
-              }
-              className={errors.file ? "border-red-500" : ""}
-            />
-            {errors.file && (
-              <p className="text-sm text-red-500">{errors.file}</p>
-            )}
-          </div>
-
-          {submitError && (
-            <p className="text-sm text-red-500">{submitError}</p>
+          {showLinkField && (
+            <div className="space-y-2">
+              <Label htmlFor="link">Google Drive / Docs Link *</Label>
+              <Input
+                id="link"
+                type="url"
+                inputMode="url"
+                placeholder="https://docs.google.com/document/d/..."
+                value={formData.link}
+                onChange={(e) =>
+                  setFormData({ ...formData, link: e.target.value })
+                }
+                aria-invalid={Boolean(errors.link)}
+                className={errors.link ? "border-red-500" : ""}
+              />
+              {errors.link ? (
+                <p className="text-sm text-red-500">{errors.link}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Make sure the file is shared so the firm can open it.
+                </p>
+              )}
+            </div>
           )}
+
+          {!isEditing && source === "file" && (
+            <div className="space-y-2">
+              <Label htmlFor="file">File *</Label>
+              <Input
+                id="file"
+                type="file"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    file: e.target.files?.[0] ?? null,
+                  })
+                }
+                className={errors.file ? "border-red-500" : ""}
+              />
+              {errors.file && (
+                <p className="text-sm text-red-500">{errors.file}</p>
+              )}
+            </div>
+          )}
+
+          {submitError && <p className="text-sm text-red-500">{submitError}</p>}
         </div>
 
         <DialogFooter>
@@ -241,7 +384,17 @@ export default function AddDocument({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "Uploading..." : "Upload"}
+            {isEditing
+              ? submitting
+                ? "Saving..."
+                : "Save Changes"
+              : source === "link"
+                ? submitting
+                  ? "Saving..."
+                  : "Add Link"
+                : submitting
+                  ? "Uploading..."
+                  : "Upload"}
           </Button>
         </DialogFooter>
       </DialogContent>

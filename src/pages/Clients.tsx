@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-import { Plus, ArrowLeft } from "lucide-react"
+import { Plus, ArrowLeft, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
@@ -32,11 +32,13 @@ export default function Clients() {
   const [searchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [editingClientId, setEditingClientId] = useState<string | null>(null)
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const {
     clients: allClients,
     loading: clientsLoading,
     error: clientsError,
+    deleteClient,
   } = useClients()
   const {
     cases: allCases,
@@ -57,6 +59,17 @@ export default function Clients() {
             <ArrowLeft className="h-4 w-4" />
             Back to Clients
           </Button>
+          <Button
+            variant="delete"
+            size="sm"
+            onClick={async () => {
+              await deleteClient(selectedClientId)
+              setSelectedClientId(null)
+            }}
+            className="gap-2"
+          >
+            <Trash2 />
+          </Button>
         </div>
         <ClientProfile clientId={selectedClientId} />
       </div>
@@ -75,9 +88,18 @@ export default function Clients() {
     return <Skeleton className="h-64 w-full" />
   }
 
+  const editingClient = allClients.find(
+    (client) => client.id === editingClientId
+  )
+
   const clients = getAllClientsWithCaseCounts(allClients, allCases).filter(
     (client) =>
-      matchesSearch(search, [client.id, client.name, client.email, client.phone])
+      matchesSearch(search, [
+        client.id,
+        client.name,
+        client.email,
+        client.phone,
+      ])
   )
 
   return (
@@ -154,6 +176,13 @@ export default function Clients() {
                       >
                         View
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingClientId(client.id)}
+                      >
+                        Edit
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -162,6 +191,17 @@ export default function Clients() {
           )}
         </CardContent>
       </Card>
+
+      {editingClient && (
+        <AddClient
+          key={editingClient.id}
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingClientId(null)
+          }}
+          client={editingClient}
+        />
+      )}
     </div>
   )
 }

@@ -195,7 +195,7 @@ export default function Login() {
               {mode === "sign-in"
                 ? "Create an Account"
                 : "Already have an account? Sign in"}
-            </Button> 
+            </Button>
           </form>
         </div>
 

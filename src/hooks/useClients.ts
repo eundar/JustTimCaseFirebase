@@ -1,36 +1,30 @@
 import { useEffect, useState } from "react"
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  updateDoc,
-} from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { useAuth } from "@/context/AuthContext"
-import type { Client } from "@/types/models"
+import type { Client } from "@/domain/models"
+import { clientRepository } from "@/data/repositories/ClientRepository"
+import { RepositoryError } from "@/data/repositories/RepositoryError"
 
 export function useClients() {
   const { user } = useAuth()
+  const userId = user?.uid
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setClients([])
+      setError(null)
       setLoading(false)
       return
     }
     setLoading(true)
-    const unsubscribe = onSnapshot(
-      collection(db, "clients"),
-      (snapshot) => {
-        setClients(
-          snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Client)
-        )
+    setError(null)
+    const unsubscribe = clientRepository.subscribe(
+      userId,
+      (records) => {
+        setClients(records)
         setLoading(false)
       },
       (err) => {
@@ -39,22 +33,24 @@ export function useClients() {
       }
     )
     return unsubscribe
-  }, [user])
+  }, [userId])
 
   const addClient = async (client: Omit<Client, "id" | "ownerId">) => {
-    if (!user) throw new Error("Not authenticated")
-    await addDoc(collection(db, "clients"), { ...client, ownerId: user.uid })
+    if (!userId) throw new RepositoryError("Create client", new Error("Not authenticated"))
+    await clientRepository.create(userId, client)
   }
 
   const updateClient = async (
     id: string,
     updates: Partial<Omit<Client, "id" | "ownerId">>
   ) => {
-    await updateDoc(doc(db, "clients", id), updates)
+    if (!userId) throw new RepositoryError("Update client", new Error("Not authenticated"))
+    await clientRepository.update(userId, id, updates)
   }
 
   const deleteClient = async (id: string) => {
-    await deleteDoc(doc(db, "clients", id))
+    if (!userId) throw new RepositoryError("Delete client", new Error("Not authenticated"))
+    await clientRepository.delete(userId, id)
   }
 
   return { clients, loading, error, addClient, updateClient, deleteClient }

@@ -134,8 +134,14 @@ async function main() {
 
   mockCases.forEach((c) => {
     const { id, ...data } = c
+    const client = mockClients.find((candidate) => candidate.id === c.clientId)
+    if (!client) {
+      throw new Error(`No client found for case ${id} (clientId ${c.clientId})`)
+    }
     batch.set(db.collection("cases").doc(id), {
       ...data,
+      clientName: client.name,
+      type: c.type === "Personal Injury" ? "Other" : c.type,
       ownerId: ownerForClient(c.clientId),
     })
   })

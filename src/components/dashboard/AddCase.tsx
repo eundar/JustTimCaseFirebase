@@ -23,40 +23,42 @@ import {
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 
-import type { Case } from "@/types/models"
+import type { Case } from "@/domain/models"
 
 type NewCase = Omit<Case, "id" | "ownerId">
 
 interface AddCaseProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  // When set, the dialog edits this case instead of creating a new one.
+  caseItem?: Case
 }
 
-export default function AddCase({ open, onOpenChange }: AddCaseProps) {
+const caseStatuses: NewCase["status"][] = ["Active", "Pending", "Closed"]
+
+export default function AddCase({
+  open,
+  onOpenChange,
+  caseItem,
+}: AddCaseProps) {
   const { clients } = useClients()
-  const { addCase } = useCases()
+  const { addCase, updateCase } = useCases()
+  const isEditing = Boolean(caseItem)
   const [formData, setFormData] = useState<NewCase>({
-    title: "",
-    clientId: "",
-    type: "Other",
-    status: "Active",
-    openDate: new Date().toISOString().split("T")[0],
+    title: caseItem?.title ?? "",
+    clientId: caseItem?.clientId ?? "",
+    clientName: caseItem?.clientName ?? "",
+    type: caseItem?.type ?? "Other",
+    status: caseItem?.status ?? "Active",
+    openDate: caseItem?.openDate ?? new Date().toISOString().split("T")[0],
   })
 
   const [errors, setErrors] = useState<Partial<NewCase>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const caseTypes = [
-    "Civil",
-    "Criminal",
-    "Family",
-    "Property",
-    "Personal Injury",
-    "Contract",
-    "Employment",
-    "Other",
-  ]
+  // Keep an existing case's type selectable even if it is not offered for new cases.
+  const caseTypes = Array.from(new Set(["Other", formData.type]))
 
   const validateForm = (): boolean => {
     const newErrors: Partial<NewCase> = {}
@@ -85,7 +87,11 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await addCase(formData)
+      if (caseItem) {
+        await updateCase(caseItem.id, formData)
+      } else {
+        await addCase(formData)
+      }
       handleReset()
       onOpenChange(false)
     } catch (err) {
@@ -99,6 +105,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
     setFormData({
       title: "",
       clientId: "",
+      clientName: "",
       type: "Other",
       status: "Active",
       openDate: new Date().toISOString().split("T")[0],
@@ -106,6 +113,12 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
     setErrors({})
     setSubmitError(null)
   }
+  console.log("Selected client ID:", formData.clientId)
+
+  console.log(
+    "Selected client:",
+    clients.find((client) => client.id === formData.clientId)
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -117,10 +130,12 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
             </div>
             <div className="space-y-1.5">
               <DialogTitle className="text-lg font-semibold tracking-tight">
-                Create New Case
+                {isEditing ? "Edit Case" : "Create New Case"}
               </DialogTitle>
               <DialogDescription>
-                Add the case details and link it to a client.
+                {isEditing
+                  ? "Update the case details."
+                  : "Add the case details and link it to a client."}
               </DialogDescription>
             </div>
           </div>
@@ -157,15 +172,20 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
                   setFormData({
                     ...formData,
                     clientId: value as NewCase["clientId"],
+                    clientName:
+                      clients.find((client) => client.id === value)?.name ?? "",
                   })
                 }
               >
                 <SelectTrigger
                   id="client"
                   aria-invalid={Boolean(errors.clientId)}
-                  className="h-10"
+                  className="h-10 w-full"
                 >
-                  <SelectValue placeholder="Select a client" />
+                  <SelectValue>
+                    {clients.find((client) => client.id === formData.clientId)
+                      ?.name ?? "Select a client"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((client) => (
@@ -193,7 +213,7 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
                 <SelectTrigger
                   id="type"
                   aria-invalid={Boolean(errors.type)}
-                  className="h-10"
+                  className="h-10 w-full"
                 >
                   <SelectValue placeholder="Select case type" />
                 </SelectTrigger>
@@ -211,22 +231,52 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="openDate" className="text-sm font-medium">
-              Open Date <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="openDate"
-              type="date"
-              value={formData.openDate}
-              onChange={(e) =>
-                setFormData({ ...formData, openDate: e.target.value })
-              }
-              aria-invalid={Boolean(errors.openDate)}
-              className={`h-10 ${errors.openDate ? "border-destructive" : ""}`}
-            />
-            {errors.openDate && (
-              <p className="text-sm text-destructive">{errors.openDate}</p>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="openDate" className="text-sm font-medium">
+                Open Date <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="openDate"
+                type="date"
+                value={formData.openDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, openDate: e.target.value })
+                }
+                aria-invalid={Boolean(errors.openDate)}
+                className={`h-10 ${errors.openDate ? "border-destructive" : ""}`}
+              />
+              {errors.openDate && (
+                <p className="text-sm text-destructive">{errors.openDate}</p>
+              )}
+            </div>
+
+            {isEditing && (
+              <div className="space-y-2">
+                <Label htmlFor="status" className="text-sm font-medium">
+                  Status <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      status: value as NewCase["status"],
+                    })
+                  }
+                >
+                  <SelectTrigger id="status" className="h-10 w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {caseStatuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
 
@@ -252,12 +302,14 @@ export default function AddCase({ open, onOpenChange }: AddCaseProps) {
           >
             Cancel
           </Button>
-          <Button
-            className="h-10"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting ? "Creating..." : "Create Case"}
+          <Button className="h-10" onClick={handleSubmit} disabled={submitting}>
+            {isEditing
+              ? submitting
+                ? "Saving..."
+                : "Save Changes"
+              : submitting
+                ? "Creating..."
+                : "Create Case"}
           </Button>
         </DialogFooter>
       </DialogContent>

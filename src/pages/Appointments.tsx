@@ -32,6 +32,9 @@ import ScheduleAppointment from "@/components/dashboard/ScheduleAppointment"
 export default function Appointments() {
   const [searchParams] = useSearchParams()
   const [openScheduleDialog, setOpenScheduleDialog] = useState(false)
+  const [editingAppointmentId, setEditingAppointmentId] = useState<
+    string | null
+  >(null)
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const { clients, loading: clientsLoading, error: clientsError } = useClients()
   const { cases, loading: casesLoading, error: casesError } = useCases()
@@ -52,6 +55,10 @@ export default function Appointments() {
   if (clientsLoading || casesLoading || appointmentsLoading) {
     return <Skeleton className="h-64 w-full" />
   }
+
+  const editingAppointment = allAppointments.find(
+    (appointment) => appointment.id === editingAppointmentId
+  )
 
   const appointmentList = getAppointmentsWithDetails(
     allAppointments,
@@ -158,7 +165,11 @@ export default function Appointments() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingAppointmentId(appointment.id)}
+                    >
                       Edit
                     </Button>
                   </TableCell>
@@ -173,6 +184,17 @@ export default function Appointments() {
         open={openScheduleDialog}
         onOpenChange={setOpenScheduleDialog}
       />
+
+      {editingAppointment && (
+        <ScheduleAppointment
+          key={editingAppointment.id}
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingAppointmentId(null)
+          }}
+          appointment={editingAppointment}
+        />
+      )}
     </div>
   )
 }

@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import type { Appointment } from "@/types/models"
+import type { Appointment } from "@/domain/models"
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useAppointments } from "@/hooks/useAppointments"
@@ -31,7 +31,16 @@ type NewAppointment = Omit<Appointment, "id" | "ownerId" | "status">
 interface ScheduleAppointmentProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  // When set, the dialog edits this appointment instead of scheduling one.
+  appointment?: Appointment
 }
+
+const appointmentStatuses: Appointment["status"][] = [
+  "Scheduled",
+  "Confirmed",
+  "Completed",
+  "Pending",
+]
 
 const appointmentTypes = [
   "Initial Consultation",
@@ -48,18 +57,23 @@ const locations = ["Office", "Virtual", "Client Site"]
 export default function ScheduleAppointment({
   open,
   onOpenChange,
+  appointment,
 }: ScheduleAppointmentProps) {
   const { clients } = useClients()
   const { cases } = useCases()
-  const { addAppointment } = useAppointments()
+  const { addAppointment, updateAppointment } = useAppointments()
+  const isEditing = Boolean(appointment)
   const [formData, setFormData] = useState<NewAppointment>({
-    clientId: "",
-    caseId: null,
-    type: "",
-    date: "",
-    time: "",
-    location: "",
+    clientId: appointment?.clientId ?? "",
+    caseId: appointment?.caseId ?? null,
+    type: appointment?.type ?? "",
+    date: appointment?.date ?? "",
+    time: appointment?.time ?? "",
+    location: appointment?.location ?? "",
   })
+  const [status, setStatus] = useState<Appointment["status"]>(
+    appointment?.status ?? "Scheduled"
+  )
 
   const [errors, setErrors] = useState<Partial<NewAppointment>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -82,7 +96,8 @@ export default function ScheduleAppointment({
       const selectedDate = new Date(formData.date)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      if (selectedDate < today) {
+      // An existing appointment may keep its (now past) date, e.g. to mark it completed.
+      if (selectedDate < today && formData.date !== appointment?.date) {
         newErrors.date = "Date cannot be in the past"
       }
     }
@@ -107,7 +122,11 @@ export default function ScheduleAppointment({
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await addAppointment({ ...formData, status: "Scheduled" })
+      if (appointment) {
+        await updateAppointment(appointment.id, { ...formData, status })
+      } else {
+        await addAppointment({ ...formData, status: "Scheduled" })
+      }
       handleReset()
       onOpenChange(false)
     } catch (err) {
@@ -140,10 +159,12 @@ export default function ScheduleAppointment({
             </div>
             <div className="space-y-1.5">
               <DialogTitle className="text-lg font-semibold tracking-tight">
-                Schedule Appointment
+                {isEditing ? "Edit Appointment" : "Schedule Appointment"}
               </DialogTitle>
               <DialogDescription>
-                Set a time to meet with a client and link it to a case if needed.
+                {isEditing
+                  ? "Update the appointment details or status."
+                  : "Set a time to meet with a client and link it to a case if needed."}
               </DialogDescription>
             </div>
           </div>
@@ -183,12 +204,18 @@ export default function ScheduleAppointment({
 
             <div className="space-y-2">
               <Label htmlFor="case-select" className="text-sm font-medium">
-                Case <span className="font-normal text-muted-foreground">(Optional)</span>
+                Case{" "}
+                <span className="font-normal text-muted-foreground">
+                  (Optional)
+                </span>
               </Label>
               <Select
                 value={formData.caseId || ""}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, caseId: value || null })
+                  setFormData({
+                    ...formData,
+                    caseId: value && value !== "none" ? value : null,
+                  })
                 }
               >
                 <SelectTrigger id="case-select" className="h-10 w-full">
@@ -306,6 +333,31 @@ export default function ScheduleAppointment({
             )}
           </div>
 
+          {isEditing && (
+            <div className="space-y-2">
+              <Label htmlFor="status-select" className="text-sm font-medium">
+                Status <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={status}
+                onValueChange={(value) =>
+                  setStatus(value as Appointment["status"])
+                }
+              >
+                <SelectTrigger id="status-select" className="h-10 w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {appointmentStatuses.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {submitError && (
             <p
               className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive"
@@ -328,12 +380,14 @@ export default function ScheduleAppointment({
           >
             Cancel
           </Button>
-          <Button
-            className="h-10"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting ? "Scheduling..." : "Schedule"}
+          <Button className="h-10" onClick={handleSubmit} disabled={submitting}>
+            {isEditing
+              ? submitting
+                ? "Saving..."
+                : "Save Changes"
+              : submitting
+                ? "Scheduling..."
+                : "Schedule"}
           </Button>
         </DialogFooter>
       </DialogContent>

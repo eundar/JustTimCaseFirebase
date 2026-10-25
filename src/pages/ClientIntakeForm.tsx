@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react"
 import { useProspectiveClients } from "@/hooks/useClientIntakeForm"
-import type { CaseType } from "@/types/types"
+import type { CaseType } from "@/domain/models"
 import { ArrowLeft, CheckCircle2, Scale } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {

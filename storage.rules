@@ -1,9 +1,16 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Shared firm-wide documents: any signed-in attorney can read/write any file.
+    function isAttorney() {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/attorneys/$(request.auth.uid));
+    }
+
+    // Every attorney can open and remove any document; uploads still go under
+    // the uploader's own folder.
     match /documents/{ownerId}/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, delete: if isAttorney();
+      allow create, update: if isAttorney() && request.auth.uid == ownerId;
     }
   }
 }
