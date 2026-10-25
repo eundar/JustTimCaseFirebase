@@ -1,6 +1,7 @@
 import type {
   Appointment,
   Case,
+  CaseNote,
   Client,
   DocumentRecord,
 } from "@/domain/models"
@@ -117,4 +118,86 @@ export function getStatistics(
       (a) => a.status === "Scheduled" || a.status === "Confirmed"
     ).length,
   }
+}
+
+export type CaseTimelineItem =
+  | {
+      kind: "note"
+      id: string
+      date: string
+      note: CaseNote
+      appointments: Appointment[]
+      documents: DocumentRecord[]
+    }
+  | { kind: "appointment"; id: string; date: string; appointment: Appointment }
+  | { kind: "document"; id: string; date: string; document: DocumentRecord }
+  | {
+      kind: "opened"
+      id: string
+      date: string
+      caseItem: Case
+      client: Client | undefined
+    }
+
+// Same-day entries are ordered note, appointment, document, then case opened.
+const timelineRank: Record<CaseTimelineItem["kind"], number> = {
+  note: 0,
+  appointment: 1,
+  document: 2,
+  opened: 3,
+}
+
+// Everything that happened on a case, newest first: written notes (with the
+// appointments/documents they reference), appointments, documents, and the
+// date the case was opened for its client.
+export function getCaseTimeline(
+  caseItem: Case,
+  client: Client | undefined,
+  notes: CaseNote[],
+  appointments: Appointment[],
+  documents: DocumentRecord[]
+): CaseTimelineItem[] {
+  const caseAppointments = appointments.filter((a) => a.caseId === caseItem.id)
+  const caseDocuments = documents.filter((d) => d.caseId === caseItem.id)
+
+  const items: CaseTimelineItem[] = [
+    ...notes
+      .filter((note) => note.caseId === caseItem.id)
+      .map((note) => ({
+        kind: "note" as const,
+        id: note.id,
+        date: note.createdAt,
+        note,
+        appointments: caseAppointments.filter((a) =>
+          note.appointmentIds.includes(a.id)
+        ),
+        documents: caseDocuments.filter((d) => note.documentIds.includes(d.id)),
+      })),
+    ...caseAppointments.map((appointment) => ({
+      kind: "appointment" as const,
+      id: appointment.id,
+      date: appointment.date,
+      appointment,
+    })),
+    ...caseDocuments.map((document) => ({
+      kind: "document" as const,
+      id: document.id,
+      date: document.uploadedDate,
+      document,
+    })),
+    {
+      kind: "opened",
+      id: caseItem.id,
+      date: caseItem.openDate,
+      caseItem,
+      client,
+    },
+  ]
+
+  return items.sort(
+    (a, b) =>
+      b.date.slice(0, 10).localeCompare(a.date.slice(0, 10)) ||
+      timelineRank[a.kind] - timelineRank[b.kind] ||
+      b.date.localeCompare(a.date)
+  )
 }

@@ -10,11 +10,7 @@ export type CaseType =
   | "Other"
 
 export type DocumentType =
-  | "Contract"
-  | "Brief"
-  | "Invoice"
-  | "Agreement"
-  | "Other"
+  "Contract" | "Brief" | "Invoice" | "Agreement" | "Other"
 
 export interface AttorneyProfile {
   name: string
@@ -65,6 +61,19 @@ export interface DocumentRecord {
   size: string
   url: string
   storagePath: string
+}
+
+export interface CaseNote {
+  id: string
+  ownerId: string
+  caseId: string
+  body: string
+  authorName: string
+  createdAt: string
+  updatedAt?: string
+  // Appointments and documents of the same case that this note is about.
+  appointmentIds: string[]
+  documentIds: string[]
 }
 
 export interface ProspectiveClient {

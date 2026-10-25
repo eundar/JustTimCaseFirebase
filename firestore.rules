@@ -74,6 +74,44 @@ service cloud.firestore {
       allow update: if isAttorney() && preservesOwner();
     }
 
+    // Written notes on a case. Any attorney can read and manage them, but the
+    // author, case, and creation time are fixed once written.
+    match /caseNotes/{noteId} {
+      function validCaseNote(data) {
+        return data.caseId is string &&
+          data.caseId.size() > 0 &&
+          data.body is string &&
+          data.body.size() > 0 &&
+          data.body.size() <= 5000 &&
+          data.authorName is string &&
+          data.authorName.size() <= 200 &&
+          data.createdAt is string &&
+          data.appointmentIds is list &&
+          data.appointmentIds.size() <= 100 &&
+          data.documentIds is list &&
+          data.documentIds.size() <= 100;
+      }
+
+      allow read, delete: if isAttorney();
+      allow create: if ownsNewRecord() &&
+        validCaseNote(request.resource.data) &&
+        request.resource.data.keys().hasOnly([
+          'ownerId',
+          'caseId',
+          'body',
+          'authorName',
+          'createdAt',
+          'appointmentIds',
+          'documentIds'
+        ]);
+      allow update: if isAttorney() &&
+        preservesOwner() &&
+        validCaseNote(request.resource.data) &&
+        request.resource.data.updatedAt is string &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['body', 'appointmentIds', 'documentIds', 'updatedAt']);
+    }
+
     match /prospectiveClients/{docId} {
       // Public intake creation is schema-limited; review requires a trusted claim.
       allow create: if request.resource.data.keys().hasAll([

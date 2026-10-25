@@ -1,5 +1,27 @@
 import { describe, expect, it } from "vitest"
-import { isGoogleDriveUrl, parseCase } from "./validation"
+import { isGoogleDriveUrl, parseCase, parseCaseNote } from "./validation"
+
+describe("parseCaseNote", () => {
+  const baseNote = {
+    ownerId: "attorney-1",
+    caseId: "case-1",
+    body: "Client agreed to mediation.",
+    authorName: "Atty. Cruz",
+    createdAt: "2026-10-25T08:00:00.000Z",
+  }
+
+  it("defaults missing link lists to empty", () => {
+    const note = parseCaseNote("note-1", baseNote)
+    expect(note.appointmentIds).toEqual([])
+    expect(note.documentIds).toEqual([])
+  })
+
+  it("rejects link lists that are not lists of strings", () => {
+    expect(() =>
+      parseCaseNote("note-1", { ...baseNote, documentIds: [1, 2] })
+    ).toThrow("documentIds")
+  })
+})
 
 describe("isGoogleDriveUrl", () => {
   it("accepts Google Drive and Docs links", () => {

@@ -2,6 +2,7 @@ import type {
   Appointment,
   AttorneyProfile,
   Case,
+  CaseNote,
   CaseType,
   Client,
   DocumentRecord,
@@ -64,6 +65,17 @@ function stringValue(data: DataRecord, key: string, entity: string): string {
   return value
 }
 
+function stringArray(data: DataRecord, key: string, entity: string): string[] {
+  const value = data[key]
+  if (value === undefined) return []
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error(
+      `Invalid ${entity} record: "${key}" must be a list of strings.`
+    )
+  }
+  return value as string[]
+}
+
 function enumValue<T extends string>(
   value: unknown,
   values: readonly T[],
@@ -123,6 +135,22 @@ export function parseCase(id: string, value: unknown): Case {
       "case"
     ),
     openDate: requiredString(data, "openDate", "case"),
+  }
+}
+
+export function parseCaseNote(id: string, value: unknown): CaseNote {
+  const { data, ownerId } = parseOwner(id, value, "case note")
+  const updatedAt = optionalString(data, "updatedAt", "case note")
+  return {
+    id,
+    ownerId,
+    caseId: requiredString(data, "caseId", "case note"),
+    body: requiredString(data, "body", "case note"),
+    authorName: stringValue(data, "authorName", "case note"),
+    createdAt: requiredString(data, "createdAt", "case note"),
+    ...(updatedAt === undefined ? {} : { updatedAt }),
+    appointmentIds: stringArray(data, "appointmentIds", "case note"),
+    documentIds: stringArray(data, "documentIds", "case note"),
   }
 }
 

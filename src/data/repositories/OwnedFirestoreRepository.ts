@@ -5,8 +5,11 @@ import {
   doc,
   getDocs,
   onSnapshot,
+  query,
   updateDoc,
+  where,
   type DocumentData,
+  type Query,
 } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
 import { RepositoryError, toRepositoryError } from "./RepositoryError"
@@ -48,8 +51,32 @@ export abstract class OwnedFirestoreRepository<T extends OwnedRecord> {
     this.assertOwner(ownerId, `Subscribe to ${this.collectionName}`)
 
     // Records are shared firm-wide, so every attorney sees the whole collection.
+    return this.listen(collection(db, this.collectionName), onData, onError)
+  }
+
+  // Subscribes to the records whose `field` equals `value` (e.g. one case's notes).
+  subscribeWhere(
+    ownerId: string,
+    field: string,
+    value: string,
+    onData: (records: T[]) => void,
+    onError: (error: RepositoryError) => void
+  ): () => void {
+    this.assertOwner(ownerId, `Subscribe to ${this.collectionName}`)
+    return this.listen(
+      query(collection(db, this.collectionName), where(field, "==", value)),
+      onData,
+      onError
+    )
+  }
+
+  private listen(
+    source: Query<DocumentData>,
+    onData: (records: T[]) => void,
+    onError: (error: RepositoryError) => void
+  ): () => void {
     return onSnapshot(
-      collection(db, this.collectionName),
+      source,
       (snapshot) => onData(this.parseValidRecords(snapshot.docs)),
       (error) => {
         const repositoryError = toRepositoryError(
@@ -90,10 +117,7 @@ export abstract class OwnedFirestoreRepository<T extends OwnedRecord> {
     }
   }
 
-  async create(
-    ownerId: string,
-    data: NewOwnedRecord<T>
-  ): Promise<string> {
+  async create(ownerId: string, data: NewOwnedRecord<T>): Promise<string> {
     this.assertOwner(ownerId, `Create ${this.collectionName}`)
     try {
       const created = await addDoc(collection(db, this.collectionName), {
