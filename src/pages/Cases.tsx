@@ -34,6 +34,7 @@ export default function Cases() {
   const [searchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
+  const [editingCaseId, setEditingCaseId] = useState<string | null>(null)
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const { clients, loading: clientsLoading, error: clientsError } = useClients()
   const {
@@ -72,6 +73,8 @@ export default function Cases() {
   if (clientsLoading || casesLoading) {
     return <Skeleton className="h-64 w-full" />
   }
+
+  const editingCase = allCases.find((caseItem) => caseItem.id === editingCaseId)
 
   const cases = getCasesWithDetails(allCases, clients).filter((caseItem) =>
     matchesSearch(search, [caseItem.id, caseItem.title, caseItem.client?.name])
@@ -170,6 +173,13 @@ export default function Cases() {
                     >
                       View
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingCaseId(caseItem.id)}
+                    >
+                      Edit
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -177,6 +187,17 @@ export default function Cases() {
           </Table>
         </CardContent>
       </Card>
+
+      {editingCase && (
+        <AddCase
+          key={editingCase.id}
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingCaseId(null)
+          }}
+          caseItem={editingCase}
+        />
+      )}
     </div>
   )
 }

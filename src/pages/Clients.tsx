@@ -32,6 +32,7 @@ export default function Clients() {
   const [searchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [editingClientId, setEditingClientId] = useState<string | null>(null)
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const {
     clients: allClients,
@@ -86,6 +87,10 @@ export default function Clients() {
   if (clientsLoading || casesLoading) {
     return <Skeleton className="h-64 w-full" />
   }
+
+  const editingClient = allClients.find(
+    (client) => client.id === editingClientId
+  )
 
   const clients = getAllClientsWithCaseCounts(allClients, allCases).filter(
     (client) =>
@@ -171,6 +176,13 @@ export default function Clients() {
                       >
                         View
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingClientId(client.id)}
+                      >
+                        Edit
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -179,6 +191,17 @@ export default function Clients() {
           )}
         </CardContent>
       </Card>
+
+      {editingClient && (
+        <AddClient
+          key={editingClient.id}
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingClientId(null)
+          }}
+          client={editingClient}
+        />
+      )}
     </div>
   )
 }

@@ -74,10 +74,12 @@ export class DocumentRepository extends OwnedFirestoreRepository<DocumentRecord>
     storagePath: string
   ): Promise<void> {
     this.assertOwner(ownerId, "Delete document")
-    if (storagePath && !storagePath.startsWith(`documents/${ownerId}/`)) {
+    // Documents are shared firm-wide, so any attorney may delete any file
+    // under documents/ (storage.rules enforces the attorney check).
+    if (storagePath && !storagePath.startsWith("documents/")) {
       throw new RepositoryError(
         "Delete document",
-        new Error("Storage path does not belong to the authenticated owner.")
+        new Error("Storage path is outside the documents folder.")
       )
     }
 

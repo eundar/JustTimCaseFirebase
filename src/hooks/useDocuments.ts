@@ -38,18 +38,42 @@ export function useDocuments() {
     return unsubscribe
   }, [userId])
 
-  const uploadDocument = async (
-    file: File,
-    metadata: NewDocumentMetadata
-  ) => {
-    if (!userId) throw new RepositoryError("Upload document", new Error("Not authenticated"))
+  const uploadDocument = async (file: File, metadata: NewDocumentMetadata) => {
+    if (!userId)
+      throw new RepositoryError(
+        "Upload document",
+        new Error("Not authenticated")
+      )
     await documentRepository.upload(userId, file, metadata)
   }
 
+  const updateDocument = async (
+    id: string,
+    updates: Partial<NewDocumentMetadata>
+  ) => {
+    if (!userId)
+      throw new RepositoryError(
+        "Update document",
+        new Error("Not authenticated")
+      )
+    await documentRepository.update(userId, id, updates)
+  }
+
   const deleteDocument = async (id: string, storagePath: string) => {
-    if (!userId) throw new RepositoryError("Delete document", new Error("Not authenticated"))
+    if (!userId)
+      throw new RepositoryError(
+        "Delete document",
+        new Error("Not authenticated")
+      )
     await documentRepository.deleteDocument(userId, id, storagePath)
   }
 
-  return { documents, loading, error, uploadDocument, deleteDocument }
+  return {
+    documents,
+    loading,
+    error,
+    uploadDocument,
+    updateDocument,
+    deleteDocument,
+  }
 }

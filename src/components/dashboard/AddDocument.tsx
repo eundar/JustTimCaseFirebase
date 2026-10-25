@@ -28,6 +28,8 @@ import type { DocumentRecord } from "@/domain/models"
 interface AddDocumentProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  // When set, the dialog edits this document's details instead of uploading.
+  document?: DocumentRecord
 }
 
 const documentTypes: DocumentRecord["type"][] = [
@@ -39,6 +41,7 @@ const documentTypes: DocumentRecord["type"][] = [
 ]
 
 interface FormState {
+  name: string
   caseId: string
   clientId: string
   type: DocumentRecord["type"] | ""
@@ -46,6 +49,7 @@ interface FormState {
 }
 
 const emptyForm: FormState = {
+  name: "",
   caseId: "",
   clientId: "",
   type: "",
@@ -55,11 +59,23 @@ const emptyForm: FormState = {
 export default function AddDocument({
   open,
   onOpenChange,
+  document,
 }: AddDocumentProps) {
   const { clients } = useClients()
   const { cases } = useCases()
-  const { uploadDocument } = useDocuments()
-  const [formData, setFormData] = useState<FormState>(emptyForm)
+  const { uploadDocument, updateDocument } = useDocuments()
+  const isEditing = Boolean(document)
+  const [formData, setFormData] = useState<FormState>(
+    document
+      ? {
+          name: document.name,
+          caseId: document.caseId,
+          clientId: document.clientId,
+          type: document.type,
+          file: null,
+        }
+      : emptyForm
+  )
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({})
@@ -81,7 +97,11 @@ export default function AddDocument({
       newErrors.type = "Document type is required"
     }
 
-    if (!formData.file) {
+    if (isEditing && !formData.name.trim()) {
+      newErrors.name = "Document name is required"
+    }
+
+    if (!isEditing && !formData.file) {
       newErrors.file = "A file is required"
     }
 
@@ -96,13 +116,25 @@ export default function AddDocument({
   }
 
   const handleSubmit = async () => {
-    if (!validateForm() || !formData.file || !formData.type) {
+    if (!validateForm() || !formData.type) {
       return
     }
 
     setSubmitting(true)
     setSubmitError(null)
     try {
+      if (document) {
+        await updateDocument(document.id, {
+          name: formData.name.trim(),
+          caseId: formData.caseId,
+          clientId: formData.clientId,
+          type: formData.type,
+        })
+        handleReset()
+        onOpenChange(false)
+        return
+      }
+      if (!formData.file) return
       await uploadDocument(formData.file, {
         name: formData.file.name,
         caseId: formData.caseId,
@@ -113,7 +145,11 @@ export default function AddDocument({
       onOpenChange(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : "Failed to upload document"
+        err instanceof Error
+          ? err.message
+          : isEditing
+            ? "Failed to save document"
+            : "Failed to upload document"
       )
     } finally {
       setSubmitting(false)
@@ -124,13 +160,34 @@ export default function AddDocument({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Document</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit Document" : "Upload Document"}
+          </DialogTitle>
           <DialogDescription>
-            Attach a file to a client and case.
+            {isEditing
+              ? "Rename the document or change its client, case, or type."
+              : "Attach a file to a client and case."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {isEditing && (
+            <div className="space-y-2">
+              <Label htmlFor="name">Document Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className={errors.name ? "border-red-500" : ""}
+              />
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name}</p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="client">Client *</Label>
             <Select
@@ -206,27 +263,27 @@ export default function AddDocument({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="file">File *</Label>
-            <Input
-              id="file"
-              type="file"
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  file: e.target.files?.[0] ?? null,
-                })
-              }
-              className={errors.file ? "border-red-500" : ""}
-            />
-            {errors.file && (
-              <p className="text-sm text-red-500">{errors.file}</p>
-            )}
-          </div>
-
-          {submitError && (
-            <p className="text-sm text-red-500">{submitError}</p>
+          {!isEditing && (
+            <div className="space-y-2">
+              <Label htmlFor="file">File *</Label>
+              <Input
+                id="file"
+                type="file"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    file: e.target.files?.[0] ?? null,
+                  })
+                }
+                className={errors.file ? "border-red-500" : ""}
+              />
+              {errors.file && (
+                <p className="text-sm text-red-500">{errors.file}</p>
+              )}
+            </div>
           )}
+
+          {submitError && <p className="text-sm text-red-500">{submitError}</p>}
         </div>
 
         <DialogFooter>
@@ -241,7 +298,13 @@ export default function AddDocument({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "Uploading..." : "Upload"}
+            {isEditing
+              ? submitting
+                ? "Saving..."
+                : "Save Changes"
+              : submitting
+                ? "Uploading..."
+                : "Upload"}
           </Button>
         </DialogFooter>
       </DialogContent>

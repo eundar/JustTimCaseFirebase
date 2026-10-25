@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, FileText, Download, Trash2 } from "lucide-react"
+import { Plus, FileText, Download, Pencil, Trash2 } from "lucide-react"
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useDocuments } from "@/hooks/useDocuments"
@@ -33,6 +33,9 @@ export default function Documents() {
   const [searchParams] = useSearchParams()
   const [open, setOpen] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [editingDocumentId, setEditingDocumentId] = useState<string | null>(
+    null
+  )
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const { clients, loading: clientsLoading, error: clientsError } = useClients()
   const { cases, loading: casesLoading, error: casesError } = useCases()
@@ -55,14 +58,16 @@ export default function Documents() {
     return <Skeleton className="h-64 w-full" />
   }
 
-  const documents = getDocumentsWithDetails(allDocuments, clients, cases).filter(
-    (doc) =>
-      matchesSearch(search, [
-        doc.name,
-        doc.case?.title,
-        doc.caseId,
-        doc.type,
-      ])
+  const editingDocument = allDocuments.find(
+    (doc) => doc.id === editingDocumentId
+  )
+
+  const documents = getDocumentsWithDetails(
+    allDocuments,
+    clients,
+    cases
+  ).filter((doc) =>
+    matchesSearch(search, [doc.name, doc.case?.title, doc.caseId, doc.type])
   )
 
   return (
@@ -81,9 +86,7 @@ export default function Documents() {
         <AddDocument open={open} onOpenChange={setOpen} />
       </div>
 
-      {deleteError && (
-        <p className="text-sm text-red-500">{deleteError}</p>
-      )}
+      {deleteError && <p className="text-sm text-red-500">{deleteError}</p>}
 
       <Card>
         <CardHeader>
@@ -151,6 +154,14 @@ export default function Documents() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          aria-label="Edit document"
+                          onClick={() => setEditingDocumentId(doc.id)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => {
                             deleteDocument(doc.id, doc.storagePath).catch(
                               (err) =>
@@ -184,6 +195,17 @@ export default function Documents() {
           </Table>
         </CardContent>
       </Card>
+
+      {editingDocument && (
+        <AddDocument
+          key={editingDocument.id}
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingDocumentId(null)
+          }}
+          document={editingDocument}
+        />
+      )}
     </div>
   )
 }
