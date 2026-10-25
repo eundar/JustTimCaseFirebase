@@ -117,7 +117,6 @@ export default function Appointments() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Appointment ID</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Date & Time</TableHead>
@@ -142,9 +141,6 @@ export default function Appointments() {
               )}
               {appointmentList.map((appointment) => (
                 <TableRow key={appointment.id}>
-                  <TableCell className="font-medium">
-                    {appointment.id}
-                  </TableCell>
                   <TableCell>{appointment.client?.name}</TableCell>
                   <TableCell>{appointment.type}</TableCell>
                   <TableCell>

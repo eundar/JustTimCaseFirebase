@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, ArrowLeft } from "lucide-react"
+import { Plus, ArrowLeft, Trash2 } from "lucide-react"
 
 import { useState } from "react"
 import { useClients } from "@/hooks/useClients"
@@ -41,6 +41,7 @@ export default function Cases() {
     cases: allCases,
     loading: casesLoading,
     error: casesError,
+    deleteCase,
   } = useCases()
 
   if (selectedCaseId) {
@@ -55,6 +56,17 @@ export default function Cases() {
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Cases
+          </Button>
+          <Button
+            variant="delete"
+            size="sm"
+            onClick={async () => {
+              await deleteCase(selectedCaseId)
+              setSelectedCaseId(null)
+            }}
+            className="gap-2"
+          >
+            <Trash2 />
           </Button>
         </div>
         <CaseProfile caseId={selectedCaseId} />
@@ -124,7 +136,6 @@ export default function Cases() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Case ID</TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Type</TableHead>
@@ -147,7 +158,6 @@ export default function Cases() {
               )}
               {cases.map((caseItem) => (
                 <TableRow key={caseItem.id}>
-                  <TableCell className="font-medium">{caseItem.id}</TableCell>
                   <TableCell>{caseItem.title}</TableCell>
                   <TableCell>{caseItem.client?.name}</TableCell>
                   <TableCell>{caseItem.type}</TableCell>

@@ -58,6 +58,8 @@ export default function AddClient({
 
     if (!formData.phone.trim()) {
       newErrors.phone = "Phone is required"
+    } else if (formData.phone.length < 11) {
+      newErrors.phone = "Phone must be alteast 11 digits"
     } else if (!/^\d+$/.test(formData.phone)) {
       newErrors.phone = "Phone must contain numbers only"
     }
@@ -174,6 +176,7 @@ export default function AddClient({
                 inputMode="numeric"
                 placeholder="09123456789"
                 maxLength={11}
+                minLength={11}
                 value={formData.phone}
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
