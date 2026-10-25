@@ -41,7 +41,9 @@ function asRecord(value: unknown, entity: string): DataRecord {
 function requiredString(data: DataRecord, key: string, entity: string): string {
   const value = data[key]
   if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`Invalid ${entity} record: "${key}" must be a non-empty string.`)
+    throw new Error(
+      `Invalid ${entity} record: "${key}" must be a non-empty string.`
+    )
   }
   return value
 }
@@ -69,7 +71,9 @@ function enumValue<T extends string>(
   entity: string
 ): T {
   if (typeof value !== "string" || !values.includes(value as T)) {
-    throw new Error(`Invalid ${entity} record: "${key}" has an unsupported value.`)
+    throw new Error(
+      `Invalid ${entity} record: "${key}" has an unsupported value.`
+    )
   }
   return value as T
 }
@@ -112,7 +116,12 @@ export function parseCase(id: string, value: unknown): Case {
     clientName: optionalString(data, "clientName", "case") ?? "",
     ...(opposingParty === undefined ? {} : { opposingParty }),
     type: enumValue(data.type, caseTypes, "type", "case"),
-    status: enumValue(data.status, ["Active", "Pending", "Closed"], "status", "case"),
+    status: enumValue(
+      data.status,
+      ["Active", "Pending", "Closed"],
+      "status",
+      "case"
+    ),
     openDate: requiredString(data, "openDate", "case"),
   }
 }
@@ -121,7 +130,9 @@ export function parseAppointment(id: string, value: unknown): Appointment {
   const { data, ownerId } = parseOwner(id, value, "appointment")
   const caseId = data.caseId
   if (caseId !== null && typeof caseId !== "string") {
-    throw new Error('Invalid appointment record: "caseId" must be a string or null.')
+    throw new Error(
+      'Invalid appointment record: "caseId" must be a string or null.'
+    )
   }
   return {
     id,
@@ -138,6 +149,18 @@ export function parseAppointment(id: string, value: unknown): Appointment {
       "appointment"
     ),
     location: requiredString(data, "location", "appointment"),
+  }
+}
+
+const googleDriveHosts = ["drive.google.com", "docs.google.com"]
+
+// Documents can be stored as links to Google Drive / Docs instead of uploads.
+export function isGoogleDriveUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim())
+    return url.protocol === "https:" && googleDriveHosts.includes(url.hostname)
+  } catch {
+    return false
   }
 }
 
@@ -165,7 +188,11 @@ export function parseProspectiveClient(
   value: unknown
 ): ProspectiveClient {
   const data = asRecord(value, "prospective client")
-  const opposingParty = optionalString(data, "opposingParty", "prospective client")
+  const opposingParty = optionalString(
+    data,
+    "opposingParty",
+    "prospective client"
+  )
   if (data.privacyAgreementAccepted !== true) {
     throw new Error(
       'Invalid prospective client record: "privacyAgreementAccepted" must be true.'
@@ -176,7 +203,12 @@ export function parseProspectiveClient(
     fullName: requiredString(data, "fullName", "prospective client"),
     email: requiredString(data, "email", "prospective client"),
     phone: requiredString(data, "phone", "prospective client"),
-    caseType: enumValue(data.caseType, caseTypes, "caseType", "prospective client"),
+    caseType: enumValue(
+      data.caseType,
+      caseTypes,
+      "caseType",
+      "prospective client"
+    ),
     caseDescription: requiredString(
       data,
       "caseDescription",

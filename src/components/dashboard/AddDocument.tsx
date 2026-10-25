@@ -22,6 +22,7 @@ import {
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useDocuments } from "@/hooks/useDocuments"
+import { isGoogleDriveUrl } from "@/domain/models/validation"
 
 import type { DocumentRecord } from "@/domain/models"
 
@@ -46,7 +47,11 @@ interface FormState {
   clientId: string
   type: DocumentRecord["type"] | ""
   file: File | null
+  link: string
 }
+
+// A document is either an uploaded file or a Google Drive / Docs link.
+type DocumentSource = "file" | "link"
 
 const emptyForm: FormState = {
   name: "",
@@ -54,6 +59,7 @@ const emptyForm: FormState = {
   clientId: "",
   type: "",
   file: null,
+  link: "",
 }
 
 export default function AddDocument({
@@ -63,8 +69,12 @@ export default function AddDocument({
 }: AddDocumentProps) {
   const { clients } = useClients()
   const { cases } = useCases()
-  const { uploadDocument, updateDocument } = useDocuments()
+  const { uploadDocument, addDocumentLink, updateDocument } = useDocuments()
   const isEditing = Boolean(document)
+  const isEditingLink = Boolean(
+    document && !document.storagePath && isGoogleDriveUrl(document.url)
+  )
+  const [source, setSource] = useState<DocumentSource>("file")
   const [formData, setFormData] = useState<FormState>(
     document
       ? {
@@ -73,9 +83,12 @@ export default function AddDocument({
           clientId: document.clientId,
           type: document.type,
           file: null,
+          link: isEditingLink ? document.url : "",
         }
       : emptyForm
   )
+  const showNameField = isEditing || source === "link"
+  const showLinkField = isEditing ? isEditingLink : source === "link"
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({})
@@ -97,11 +110,20 @@ export default function AddDocument({
       newErrors.type = "Document type is required"
     }
 
-    if (isEditing && !formData.name.trim()) {
+    if (showNameField && !formData.name.trim()) {
       newErrors.name = "Document name is required"
     }
 
-    if (!isEditing && !formData.file) {
+    if (showLinkField) {
+      if (!formData.link.trim()) {
+        newErrors.link = "A Google Drive or Docs link is required"
+      } else if (!isGoogleDriveUrl(formData.link)) {
+        newErrors.link =
+          "Enter a link that starts with https://drive.google.com or https://docs.google.com"
+      }
+    }
+
+    if (!isEditing && source === "file" && !formData.file) {
       newErrors.file = "A file is required"
     }
 
@@ -125,6 +147,18 @@ export default function AddDocument({
     try {
       if (document) {
         await updateDocument(document.id, {
+          name: formData.name.trim(),
+          caseId: formData.caseId,
+          clientId: formData.clientId,
+          type: formData.type,
+          ...(isEditingLink ? { url: formData.link.trim() } : {}),
+        })
+        handleReset()
+        onOpenChange(false)
+        return
+      }
+      if (source === "link") {
+        await addDocumentLink(formData.link, {
           name: formData.name.trim(),
           caseId: formData.caseId,
           clientId: formData.clientId,
@@ -166,12 +200,39 @@ export default function AddDocument({
           <DialogDescription>
             {isEditing
               ? "Rename the document or change its client, case, or type."
-              : "Attach a file to a client and case."}
+              : "Attach a file or a Google Drive / Docs link to a client and case."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {isEditing && (
+          {!isEditing && (
+            <div
+              className="grid grid-cols-2 gap-2"
+              role="radiogroup"
+              aria-label="Document source"
+            >
+              <Button
+                type="button"
+                role="radio"
+                aria-checked={source === "file"}
+                variant={source === "file" ? "default" : "outline"}
+                onClick={() => setSource("file")}
+              >
+                Upload file
+              </Button>
+              <Button
+                type="button"
+                role="radio"
+                aria-checked={source === "link"}
+                variant={source === "link" ? "default" : "outline"}
+                onClick={() => setSource("link")}
+              >
+                Google Drive link
+              </Button>
+            </div>
+          )}
+
+          {showNameField && (
             <div className="space-y-2">
               <Label htmlFor="name">Document Name *</Label>
               <Input
@@ -263,7 +324,32 @@ export default function AddDocument({
             )}
           </div>
 
-          {!isEditing && (
+          {showLinkField && (
+            <div className="space-y-2">
+              <Label htmlFor="link">Google Drive / Docs Link *</Label>
+              <Input
+                id="link"
+                type="url"
+                inputMode="url"
+                placeholder="https://docs.google.com/document/d/..."
+                value={formData.link}
+                onChange={(e) =>
+                  setFormData({ ...formData, link: e.target.value })
+                }
+                aria-invalid={Boolean(errors.link)}
+                className={errors.link ? "border-red-500" : ""}
+              />
+              {errors.link ? (
+                <p className="text-sm text-red-500">{errors.link}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Make sure the file is shared so the firm can open it.
+                </p>
+              )}
+            </div>
+          )}
+
+          {!isEditing && source === "file" && (
             <div className="space-y-2">
               <Label htmlFor="file">File *</Label>
               <Input
@@ -302,9 +388,13 @@ export default function AddDocument({
               ? submitting
                 ? "Saving..."
                 : "Save Changes"
-              : submitting
-                ? "Uploading..."
-                : "Upload"}
+              : source === "link"
+                ? submitting
+                  ? "Saving..."
+                  : "Add Link"
+                : submitting
+                  ? "Uploading..."
+                  : "Upload"}
           </Button>
         </DialogFooter>
       </DialogContent>

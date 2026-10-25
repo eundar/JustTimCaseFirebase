@@ -47,9 +47,21 @@ export function useDocuments() {
     await documentRepository.upload(userId, file, metadata)
   }
 
+  const addDocumentLink = async (
+    link: string,
+    metadata: NewDocumentMetadata
+  ) => {
+    if (!userId)
+      throw new RepositoryError(
+        "Add document link",
+        new Error("Not authenticated")
+      )
+    await documentRepository.addLink(userId, link, metadata)
+  }
+
   const updateDocument = async (
     id: string,
-    updates: Partial<NewDocumentMetadata>
+    updates: Partial<NewDocumentMetadata & Pick<DocumentRecord, "url">>
   ) => {
     if (!userId)
       throw new RepositoryError(
@@ -73,6 +85,7 @@ export function useDocuments() {
     loading,
     error,
     uploadDocument,
+    addDocumentLink,
     updateDocument,
     deleteDocument,
   }

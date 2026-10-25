@@ -1,9 +1,4 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-} from "firebase/firestore"
+import { addDoc, collection, deleteDoc, doc } from "firebase/firestore"
 import {
   deleteObject,
   getDownloadURL,
@@ -11,7 +6,10 @@ import {
   uploadBytes,
 } from "firebase/storage"
 import type { DocumentRecord, DocumentType } from "@/domain/models"
-import { parseDocumentRecord } from "@/domain/models/validation"
+import {
+  isGoogleDriveUrl,
+  parseDocumentRecord,
+} from "@/domain/models/validation"
 import { db, storage } from "@/lib/firebase"
 import { OwnedFirestoreRepository } from "./OwnedFirestoreRepository"
 import { RepositoryError, toRepositoryError } from "./RepositoryError"
@@ -65,6 +63,36 @@ export class DocumentRepository extends OwnedFirestoreRepository<DocumentRecord>
         }
       }
       throw toRepositoryError("Upload document", error)
+    }
+  }
+
+  // Saves a Google Drive / Docs link as a document. Nothing goes to Storage,
+  // so storagePath stays empty and delete only removes the record.
+  async addLink(
+    ownerId: string,
+    link: string,
+    metadata: NewDocumentMetadata
+  ): Promise<void> {
+    this.assertOwner(ownerId, "Add document link")
+    const url = link.trim()
+    if (!isGoogleDriveUrl(url)) {
+      throw new RepositoryError(
+        "Add document link",
+        new Error("Link must be a Google Drive or Google Docs URL.")
+      )
+    }
+
+    try {
+      await addDoc(collection(db, "documents"), {
+        ...metadata,
+        ownerId,
+        uploadedDate: new Date().toISOString().split("T")[0],
+        size: "Google Drive link",
+        url,
+        storagePath: "",
+      })
+    } catch (error) {
+      throw toRepositoryError("Add document link", error)
     }
   }
 

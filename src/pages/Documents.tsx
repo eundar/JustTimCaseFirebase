@@ -21,7 +21,15 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, FileText, Download, Pencil, Trash2 } from "lucide-react"
+import {
+  Plus,
+  FileText,
+  Download,
+  ExternalLink,
+  Pencil,
+  Trash2,
+} from "lucide-react"
+import { isGoogleDriveUrl } from "@/domain/models/validation"
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 import { useDocuments } from "@/hooks/useDocuments"
@@ -149,7 +157,11 @@ export default function Documents() {
                             size: "sm",
                           })}
                         >
-                          <Download className="h-4 w-4" />
+                          {isGoogleDriveUrl(doc.url) ? (
+                            <ExternalLink className="h-4 w-4" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
                         </a>
                         <Button
                           variant="ghost"
