@@ -124,7 +124,6 @@ export default function Cases() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Case ID</TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Type</TableHead>
@@ -147,7 +146,6 @@ export default function Cases() {
               )}
               {cases.map((caseItem) => (
                 <TableRow key={caseItem.id}>
-                  <TableCell className="font-medium">{caseItem.id}</TableCell>
                   <TableCell>{caseItem.title}</TableCell>
                   <TableCell>{caseItem.client?.name}</TableCell>
                   <TableCell>{caseItem.type}</TableCell>
