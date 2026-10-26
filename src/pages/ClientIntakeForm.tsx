@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react"
 import { useProspectiveClients } from "@/hooks/useClientIntakeForm"
-import type { CaseType } from "@/domain/models"
+import { CASE_TYPES, type CaseType } from "@/domain/models"
 import { ArrowLeft, CheckCircle2, Scale } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,18 +21,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-
-const caseTypes: CaseType[] = [
-  "Criminal",
-  "Civil",
-  "Family",
-  "Corporate",
-  "Labor",
-  "Property",
-  "Immigration",
-  "Intellectual Property",
-  "Other",
-]
 
 export default function ClientIntakeFormPage() {
   const { addProspectiveClient } = useProspectiveClients()
@@ -237,7 +225,7 @@ export default function ClientIntakeFormPage() {
                         }
                         required
                       >
-                        {caseTypes.map((type) => (
+                        {CASE_TYPES.map((type) => (
                           <option key={type} value={type}>
                             {type}
                           </option>

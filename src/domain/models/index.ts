@@ -7,7 +7,27 @@ export type CaseType =
   | "Property"
   | "Immigration"
   | "Intellectual Property"
+  | "Tenant"
+  | "Agricultural Land"
+  | "CLOA"
+  | "DAR"
   | "Other"
+
+export const CASE_TYPES: CaseType[] = [
+  "Criminal",
+  "Civil",
+  "Family",
+  "Corporate",
+  "Labor",
+  "Property",
+  "Immigration",
+  "Intellectual Property",
+  "Tenant",
+  "Agricultural Land",
+  "CLOA",
+  "DAR",
+  "Other",
+]
 
 export type DocumentType =
   "Contract" | "Brief" | "Invoice" | "Agreement" | "Other"
