@@ -23,7 +23,7 @@ import {
 import { useClients } from "@/hooks/useClients"
 import { useCases } from "@/hooks/useCases"
 
-import type { Case } from "@/domain/models"
+import { CASE_TYPES, type Case } from "@/domain/models"
 
 type NewCase = Omit<Case, "id" | "ownerId">
 
@@ -57,8 +57,8 @@ export default function AddCase({
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  // Keep an existing case's type selectable even if it is not offered for new cases.
-  const caseTypes = Array.from(new Set(["Other", formData.type]))
+  // Keep the shared case-type list as the single source of truth.
+  const caseTypes = Array.from(new Set([...CASE_TYPES, formData.type]))
 
   const validateForm = (): boolean => {
     const newErrors: Partial<NewCase> = {}

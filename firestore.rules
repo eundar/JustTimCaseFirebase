@@ -154,6 +154,10 @@ service cloud.firestore {
           'Property',
           'Immigration',
           'Intellectual Property',
+          'Tenant',
+          'Agricultural Land',
+          'CLOA',
+          'DAR',
           'Other'
         ] &&
         request.resource.data.privacyAgreementAccepted == true &&

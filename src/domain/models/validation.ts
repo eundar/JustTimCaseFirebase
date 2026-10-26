@@ -1,28 +1,16 @@
-import type {
-  Appointment,
-  AttorneyProfile,
-  Case,
-  CaseNote,
-  CaseType,
-  Client,
-  DocumentRecord,
-  DocumentType,
-  ProspectiveClient,
+import {
+  CASE_TYPES,
+  type Appointment,
+  type AttorneyProfile,
+  type Case,
+  type CaseNote,
+  type Client,
+  type DocumentRecord,
+  type DocumentType,
+  type ProspectiveClient,
 } from "@/domain/models"
 
 type DataRecord = Record<string, unknown>
-
-const caseTypes: CaseType[] = [
-  "Criminal",
-  "Civil",
-  "Family",
-  "Corporate",
-  "Labor",
-  "Property",
-  "Immigration",
-  "Intellectual Property",
-  "Other",
-]
 
 const documentTypes: DocumentType[] = [
   "Contract",
@@ -127,7 +115,7 @@ export function parseCase(id: string, value: unknown): Case {
     // Older cases were saved without a clientName (or with ""), so tolerate it.
     clientName: optionalString(data, "clientName", "case") ?? "",
     ...(opposingParty === undefined ? {} : { opposingParty }),
-    type: enumValue(data.type, caseTypes, "type", "case"),
+    type: enumValue(data.type, CASE_TYPES, "type", "case"),
     status: enumValue(
       data.status,
       ["Active", "Pending", "Closed"],
@@ -233,7 +221,7 @@ export function parseProspectiveClient(
     phone: requiredString(data, "phone", "prospective client"),
     caseType: enumValue(
       data.caseType,
-      caseTypes,
+      CASE_TYPES,
       "caseType",
       "prospective client"
     ),
